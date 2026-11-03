@@ -252,17 +252,20 @@ class ConvertibleBondFeeModel(AShareFeeModel):
     符合中国可转债法定标准的费税计算模型 (Convertible Bond Fee Model)
     - 卖出完全免征印花税 (stamp_duty = 0.0)
     - 佣金率默认万一 (0.0001)，最低 1 元 (无股票 5 元保底)
-    - 双边过户费十万分之一 (0.00001)
+    - 双边过户费十万分之一 (0.00001)，2022-04-29 前为十万分之二 (0.00002)
     """
+    is_cb_model = True
+
     def __init__(
         self,
-        commission_rate: Optional[float] = 0.0001,
-        min_commission: Optional[float] = 1.0,
-        stamp_duty_rate: Optional[float] = 0.0,
-        transfer_fee_rate: Optional[float] = 0.00001,
+        commission_rate: Optional[float] = None,
+        min_commission: Optional[float] = None,
+        stamp_duty_rate: Optional[float] = None,
+        transfer_fee_rate: Optional[float] = None,
         currency: Currency = CNY,
         scope_id: str = "cb_run",
         current_trade_date: Optional[str] = None,
+        cb_symbols: Optional[set[str]] = None,
     ):
         super().__init__(
             commission_rate=commission_rate,
@@ -272,6 +275,7 @@ class ConvertibleBondFeeModel(AShareFeeModel):
             currency=currency,
             scope_id=scope_id,
             current_trade_date=current_trade_date,
+            cb_symbols=cb_symbols,
         )
 
     def _resolve_rates(self, order: Order) -> Tuple[Decimal, Decimal, Decimal, Decimal]:
