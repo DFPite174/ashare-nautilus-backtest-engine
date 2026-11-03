@@ -123,6 +123,7 @@ class AShareFeeModel(FeeModel):
         currency: Currency = CNY,
         scope_id: str = "default_run",
         current_trade_date: Optional[str] = None,
+        cb_symbols: Optional[set[str]] = None,
     ):
         super().__init__()
         self._custom_comm_rate = Decimal(str(commission_rate)) if commission_rate is not None else None
@@ -132,10 +133,20 @@ class AShareFeeModel(FeeModel):
         self.currency = currency
         self.scope_id = scope_id
         self.current_trade_date = current_trade_date
+        self.cb_symbols: set[str] = set(cb_symbols or [])
 
         # 订单级多维命名空间费用追踪 (杜绝跨策略或跨运行缓存串扰)
         self._order_raw_commission: Dict[str, Decimal] = {}
         self._order_commission_charged: Dict[str, Decimal] = {}
+
+    def _is_cb_order(self, order: Order) -> bool:
+        if getattr(self, "is_cb_model", False):
+            return True
+        iid_str = str(order.instrument_id) if hasattr(order, "instrument_id") else ""
+        raw_sym = iid_str.split(".")[0]
+        sym = raw_sym.split("-")[0] if "-" in raw_sym else raw_sym
+        cb_set = getattr(self, "cb_symbols", set())
+        return iid_str in cb_set or raw_sym in cb_set or sym in cb_set
 
     def set_scope(self, scope_id: str) -> None:
         """设置运行命名空间并重置缓存"""
@@ -165,7 +176,11 @@ class AShareFeeModel(FeeModel):
             dt = datetime.fromtimestamp(order.ts_init / 1e9, tz=SHANGHAI_TZ)
             order_date = dt.strftime("%Y-%m-%d")
 
-        matched = get_ashare_rates_for_date(order_date)
+        if self._is_cb_order(order):
+            matched = get_cb_rates_for_date(order_date)
+        else:
+            matched = get_ashare_rates_for_date(order_date)
+
         comm_rate = self._custom_comm_rate if self._custom_comm_rate is not None else matched["commission_rate"]
         min_comm = self._custom_min_comm if self._custom_min_comm is not None else matched["min_commission"]
         # 如果未显式覆盖印花税，或显式传入了基准 0.0005，则根据历史分水岭自动匹配

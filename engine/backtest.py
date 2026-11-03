@@ -20,9 +20,9 @@ from nautilus_trader.model.instruments import Equity
 from nautilus_trader.model.objects import Money, Price, Quantity
 from nautilus_trader.trading.strategy import Strategy, StrategyConfig
 
-from contracts import CorporateAction, Fill, Instrument, OrderSide as LedgerSide
+from contracts import CorporateAction, Fill, Instrument, OrderSide as LedgerSide, AssetClass, ConvertibleBondInstrument
 from engine.accounting import AShareAccountModule, action_id
-from engine.fee_model import AShareFeeModel, calculate_expected_fee
+from engine.fee_model import AShareFeeModel, ConvertibleBondFeeModel, calculate_expected_fee
 from engine.golden_ledger import GoldenLedger
 from engine.order_gateway import AShareOrderGateway
 from engine.split_guard import load_bridge
@@ -99,10 +99,12 @@ def _validate(instruments, bars, rules, actions, initial_cash, rate, trading_day
     if not master or len(master) != len(instruments) or not bars:
         raise ValueError("Unique instruments and nonempty bars are required")
     for i in instruments:
-        if i.exchange.value not in {"SSE","SZSE"} or i.asset_class.value != "EQUITY":
-            raise ValueError("Only Shanghai/Shenzhen cash equities are supported")
-        if i.currency!='CNY' or i.tick_size!=D('.01') or i.lot_size<=0:
-            raise ValueError('CNY equities with 0.01 price tick and positive lot size required')
+        is_cb = getattr(i, 'asset_class', None) == AssetClass.CONVERTIBLE_BOND or isinstance(i, ConvertibleBondInstrument)
+        if i.exchange.value not in {"SSE","SZSE"} or (i.asset_class.value not in {"EQUITY", "CONVERTIBLE_BOND"}):
+            raise ValueError("Only Shanghai/Shenzhen cash equities and convertible bonds are supported")
+        valid_ticks = {D('.001'), D('.01')} if is_cb else {D('.01')}
+        if i.currency!='CNY' or i.tick_size not in valid_ticks or i.lot_size<=0:
+            raise ValueError('CNY instruments with valid price tick and positive lot size required')
         if i.list_date and i.delist_date and i.list_date>i.delist_date:
             raise ValueError(f'Invalid security lifecycle: {i.symbol}')
     # Validate before astimezone or sorting can assume a timezone implicitly.
@@ -191,12 +193,18 @@ class _ResearchStrategy(Strategy):
         self.lookup={(str(native[b.symbol].id),nanos(b.end)):b for b in bars}
         self.by_id={str(i.id):s for s,i in native.items()}
         self.by_day=defaultdict(list)
+        self.precisions={s: (3 if inst.tick_size < D('.01') else 2) for s, inst in master.items()}
         for b in bars:self.by_day[b.end.astimezone(TZ).date()].append(b)
         for a in actions:
             self.ledger.register_corporate_action(a)
             if a.record_date and a.record_date<sessions[0]:
                 self.ledger.dividend_entitlements[f"{a.symbol}_{a.ex_date}"]=D(0)
                 self.cash_module.record_entitlement(a,D(0))
+
+    def _is_cb(self, symbol: str) -> bool:
+        inst = self.master.get(symbol)
+        if inst is None: return False
+        return getattr(inst, 'asset_class', None) == AssetClass.CONVERTIBLE_BOND or isinstance(inst, ConvertibleBondInstrument)
 
     def on_start(self):
         for b in self.bars:
@@ -307,10 +315,10 @@ class _ResearchStrategy(Strategy):
             # IOC at the observed open avoids NT market-order empty-book fallback.
             args=dict(instrument_id=tick.instrument_id,order_side=side,quantity=Quantity.from_int(intent.quantity),time_in_force=TimeInForce.IOC if intent.limit_price is None else TimeInForce.DAY)
             price=tick.ask_price if side==OrderSide.BUY else tick.bid_price
-            order=self.order_factory.limit(**args,price=price if intent.limit_price is None else Price.from_str(format(intent.limit_price,'.2f')))
+            order=self.order_factory.limit(**args,price=price if intent.limit_price is None else Price.from_str(format(intent.limit_price,f".{self.precisions[symbol]}f")))
             if side==OrderSide.BUY:
                 cost=D(str(order.price))*intent.quantity
-                cost+=calculate_expected_fee('BUY',D(intent.quantity),D(str(order.price)),trade_date=str(day))
+                cost+=calculate_expected_fee('BUY',D(intent.quantity),D(str(order.price)),trade_date=str(day),is_convertible_bond=self._is_cb(intent.symbol))
                 if cost>self.ledger.cash-sum((r['amount'] for r in self.buy_reservations.values()),D(0)):
                     self.rejections.append({'symbol':symbol,'reason':'INSUFFICIENT_CASH_WITH_FEES','time':tick.ts_init});continue
             r=self.gateway.validate_and_reserve(order,self.rules[(symbol,day)],{'close':tick.ask_price.as_double(),'volume':max(available,1),'execution_ts':tick.ts_init},tick.ask_price.as_double() if side==OrderSide.BUY else tick.bid_price.as_double())
@@ -322,11 +330,12 @@ class _ResearchStrategy(Strategy):
 
     def _affordable_quantity(self,order,price,maximum):
         key=str(order.client_order_id);px=D(str(price))
+        symbol=self.by_id[str(order.instrument_id)]
         cash=self.ledger.cash-sum((r['amount'] for k,r in self.buy_reservations.items() if k!=key),D(0))
         before=self.fee_values.get(key,D(0));lo,hi=0,maximum
         while lo<hi:
             qty=(lo+hi+1)//2
-            fee=calculate_expected_fee('BUY',D(qty),px,is_new_order=before==0,trade_date=str(self.current_day),cum_trade_val_before=before)
+            fee=calculate_expected_fee('BUY',D(qty),px,is_new_order=before==0,trade_date=str(self.current_day),cum_trade_val_before=before,is_convertible_bond=self._is_cb(symbol))
             if D(qty)*px+fee<=cash:lo=qty
             else:hi=qty-1
         return lo
@@ -337,7 +346,7 @@ class _ResearchStrategy(Strategy):
         symbol=self.by_id[str(e.instrument_id)];day=self.gateway.on_order_filled(e)
         qty=D(str(e.last_qty));px=D(str(e.last_px));fee=D(str(e.commission.as_double()))
         key=str(e.client_order_id);before=self.fee_values.get(key,D(0))
-        expected=calculate_expected_fee(e.order_side.name,qty,px,is_new_order=before==0,trade_date=day,cum_trade_val_before=before)
+        expected=calculate_expected_fee(e.order_side.name,qty,px,is_new_order=before==0,trade_date=day,cum_trade_val_before=before,is_convertible_bond=self._is_cb(symbol))
         if fee!=expected:raise RuntimeError(f"Native fee mismatch: {fee} != {expected}")
         self.fee_values[key]=before+qty*px
         self.ledger.apply_fill(Fill(fill_id=str(e.trade_id),symbol=symbol,side=LedgerSide(e.order_side.name),quantity=qty,price=px,fee=fee,timestamp=datetime.fromtimestamp(e.ts_event/1e9,TZ)),day)
@@ -345,7 +354,7 @@ class _ResearchStrategy(Strategy):
             reserve=self.buy_reservations[key];reserve['quantity']-=qty
             if reserve['quantity']==0:self.buy_reservations.pop(key)
             else:
-                reserve['amount']=reserve['quantity']*reserve['price']+calculate_expected_fee('BUY',reserve['quantity'],reserve['price'],is_new_order=False,trade_date=day,cum_trade_val_before=self.fee_values[key])
+                reserve['amount']=reserve['quantity']*reserve['price']+calculate_expected_fee('BUY',reserve['quantity'],reserve['price'],is_new_order=False,trade_date=day,cum_trade_val_before=self.fee_values[key],is_convertible_bond=self._is_cb(symbol))
         self.fills.append({'symbol':symbol,'side':e.order_side.name,'quantity':str(qty),'price':str(px),'fee':str(fee),'time':e.ts_event,'order_id':key})
 
     def on_order_canceled(self,e):
@@ -387,17 +396,30 @@ class _ResearchStrategy(Strategy):
         self.nav.append(row);self.closed.add(day)
 
 
-def run_backtest(instruments, bars, rules, signal, *, corporate_actions=(), initial_cash=D(100000), participation_rate=.01, trading_days=None):
+def run_backtest(instruments, bars, rules, signal, *, corporate_actions=(), initial_cash=D(100000), participation_rate=.01, trading_days=None, fee_model=None):
     """Run one isolated, shared-cash portfolio. Rules keyed by (symbol, local date)."""
     instruments=list(instruments);bars=list(bars);actions=list(corporate_actions);initial_cash=D(str(initial_cash))
     master,sessions=_validate(instruments,bars,rules,actions,initial_cash,participation_rate,trading_days)
+    cb_symbols = {s for s, i in master.items() if getattr(i, 'asset_class', None) == AssetClass.CONVERTIBLE_BOND or isinstance(i, ConvertibleBondInstrument)}
     eng=BacktestEngine(config=BacktestEngineConfig(trader_id=TraderId('RESEARCH-001'),logging=LoggingConfig(log_level='ERROR')))
-    cash_module=AShareAccountModule();fee=AShareFeeModel(scope_id='isolated_run');liquidity=BarLiquidity()
+    cash_module=AShareAccountModule()
+    if fee_model is None:
+        if len(cb_symbols) == len(master) and len(cb_symbols) > 0:
+            fee = ConvertibleBondFeeModel(scope_id='isolated_run')
+        else:
+            fee = AShareFeeModel(scope_id='isolated_run', cb_symbols=cb_symbols)
+    else:
+        fee = fee_model
+        if hasattr(fee, "cb_symbols"):
+            fee.cb_symbols.update(cb_symbols)
+    liquidity=BarLiquidity()
     try:
         eng.add_venue(venue=SIM,oms_type=OmsType.NETTING,account_type=AccountType.CASH,base_currency=CNY,starting_balances=[Money(float(initial_cash),CNY)],fee_model=fee,fill_model=liquidity,book_type=BookType.L2_MBP,liquidity_consumption=True,modules=[cash_module,LiquidityModule(liquidity)])
         native={}
         for symbol,i in master.items():
-            native[symbol]=Equity(instrument_id=InstrumentId(Symbol(symbol),SIM),raw_symbol=Symbol(symbol.split('.')[0]),currency=CNY,price_precision=2,price_increment=Price.from_str('.01'),lot_size=Quantity.from_int(i.lot_size),ts_event=nanos(at(sessions[0],0)),ts_init=nanos(at(sessions[0],0)))
+            prec = 3 if i.tick_size < D('.01') else 2
+            inc_str = '.001' if prec == 3 else '.01'
+            native[symbol]=Equity(instrument_id=InstrumentId(Symbol(symbol),SIM),raw_symbol=Symbol(symbol.split('.')[0]),currency=CNY,price_precision=prec,price_increment=Price.from_str(inc_str),lot_size=Quantity.from_int(i.lot_size),ts_event=nanos(at(sessions[0],0)),ts_init=nanos(at(sessions[0],0)))
             eng.add_instrument(native[symbol])
         data=[]
         for b in sorted(bars,key=lambda x:(x.start,x.symbol)):
@@ -407,14 +429,16 @@ def run_backtest(instruments, bars, rules, signal, *, corporate_actions=(), init
             iid=str(inst.id);key=(b.symbol,end)
             for ts in (start,start+1):liquidity.events[(iid,ts)]=(key,cap,False)
             for ts in (end-3,end-2,end-1,end):liquidity.events[(iid,ts)]=(key,cap,True)
-            p=Price.from_str(format(b.open,'.2f'))
+            prec = 3 if master[b.symbol].tick_size < D('.01') else 2
+            px_fmt = f".{prec}f"
+            p=Price.from_str(format(b.open,px_fmt))
             data.append(synthetic_book(inst,p,cap,start))
             data.append(QuoteTick(inst.id,p,p,Quantity.from_int(cap),Quantity.from_int(cap),start,start+1))
             for ts,value in zip((end-3,end-2,end-1),(b.high,b.low,b.close)):
-                data.append(synthetic_book(inst,Price.from_str(format(value,'.2f')),cap,ts))
+                data.append(synthetic_book(inst,Price.from_str(format(value,px_fmt)),cap,ts))
             daily=b.start.astimezone(TZ)==at(b.start.astimezone(TZ).date(),9,30) and b.end.astimezone(TZ)==at(b.end.astimezone(TZ).date(),15)
             spec=BarSpecification(1,BarAggregation.DAY,PriceType.LAST) if daily else BarSpecification(int((b.end-b.start).total_seconds()/60),BarAggregation.MINUTE,PriceType.LAST)
-            data.append(Bar(BarType(inst.id,spec,AggregationSource.EXTERNAL),*[Price.from_str(format(v,'.2f')) for v in (b.open,b.high,b.low,b.close)],Quantity.from_int(int(D(b.volume)*D(str(participation_rate)))),end,end))
+            data.append(Bar(BarType(inst.id,spec,AggregationSource.EXTERNAL),*[Price.from_str(format(v,px_fmt)) for v in (b.open,b.high,b.low,b.close)],Quantity.from_int(int(D(b.volume)*D(str(participation_rate)))),end,end))
         if data:eng.add_data(data)
         strategy=_ResearchStrategy(bars,rules,master,sessions,actions,signal,initial_cash,participation_rate,native,fee,cash_module,liquidity)
         eng.add_strategy(strategy)

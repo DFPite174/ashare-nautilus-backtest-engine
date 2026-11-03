@@ -91,3 +91,92 @@ def test_convertible_bond_batch_commission():
     )
     # 佣金保底 1 元 + 过户费 0.01 元 = 1.01 元
     assert fee_part1 == Decimal("1.01")
+
+
+def test_convertible_bond_end_to_end_backtest():
+    """
+    全闭环测试：在原生 Nautilus 引擎中运行可转债真实委托撮合回测。
+    验证：
+    1. 1手=10张整手成交
+    2. 卖出完全免征印花税 (0 stamp duty)
+    3. 双账本（Nautilus native 与 GoldenLedger）每日日切对账 100% 精确一致
+    """
+    from datetime import datetime, date, timedelta
+    from zoneinfo import ZoneInfo
+    from engine.backtest import BacktestBar, OrderIntent, run_backtest
+
+    TZ = ZoneInfo("Asia/Shanghai")
+    symbol = "110059.SH"
+    inst = ConvertibleBondInstrument(
+        symbol=symbol,
+        exchange=Venue.SSE,
+        name="浦发转债",
+        lot_size=10,
+        min_order_qty=10,
+        tick_size=Decimal("0.001"),
+    )
+
+    bars = []
+    rules = {}
+    day = date(2025, 5, 6)
+    px = Decimal("110.000")
+    for i in range(3):
+        while day.weekday() >= 5:
+            day += timedelta(days=1)
+        start = datetime.combine(day, datetime.min.time(), TZ).replace(hour=9, minute=30)
+        end = start.replace(hour=15, minute=0)
+        bars.append(BacktestBar(symbol, start, end, px, px + Decimal("1.0"), px - Decimal("1.0"), px, 50000))
+        rules[(symbol, day)] = dict(
+            trade_status="OPEN",
+            limit_state="BOUNDED",
+            up_limit=float((px * Decimal("1.2")).quantize(Decimal("0.01"))),
+            down_limit=float((px * Decimal("0.8")).quantize(Decimal("0.01"))),
+            buy_min=10,
+            buy_step=10,
+            sell_min=10,
+            sell_step=10,
+            max_order=1000000,
+        )
+        px += Decimal("2.000")
+        day += timedelta(days=1)
+
+    def signal(bar, state):
+        if bar.end.date() == date(2025, 5, 6):
+            return [OrderIntent(bar.symbol, "BUY", 100)]  # 买入 100 张 (10手)
+        if bar.end.date() == date(2025, 5, 7):
+            return [OrderIntent(bar.symbol, "SELL", 100)] # 卖出 100 张
+        return []
+
+    result = run_backtest(
+        instruments=[inst],
+        bars=bars,
+        rules=rules,
+        signal=signal,
+        initial_cash=Decimal("100000.0"),
+        participation_rate=1.0,
+    )
+
+    assert len(result.fills) == 2
+    buy_fill = result.fills[0]
+    sell_fill = result.fills[1]
+
+    assert buy_fill["side"] == "BUY"
+    assert buy_fill["quantity"] == "100"
+    assert Decimal(buy_fill["price"]) == Decimal("112.00")
+
+    assert sell_fill["side"] == "SELL"
+    assert sell_fill["quantity"] == "100"
+    assert Decimal(sell_fill["price"]) == Decimal("114.00")
+
+    # 验证卖出时免印花税：卖出成交额 = 100 * 114 = 11400 元
+    # 佣金 = 11400 * 0.0001 = 1.14 元，过户费 = 11400 * 0.00001 = 0.11 元，印花税 = 0 元
+    # 总费用 = 1.25 元 (若为股票，将额外征收 5.70 元印花税)
+    sell_fee = Decimal(sell_fill["fee"])
+    assert sell_fee == Decimal("1.25")
+
+    # 验证双轨账本 100% 对账成功
+    assert result.native_cash == result.ledger_cash
+    assert result.positions[symbol] == Decimal("0")
+    assert len(result.daily_nav) == 3
+    assert all(d["cash_matches"] and d["positions_match"] for d in result.daily_nav)
+
