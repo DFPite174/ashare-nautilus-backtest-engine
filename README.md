@@ -1,6 +1,9 @@
-# ashare-nautilus-backtest-engine：沪深常规策略回测
+# ashare-nautilus-backtest-engine：沪深股票与可转债高保真回测引擎
 
-当前实现面向沪深普通股票、现金多头、多日持有、日线/分钟线研究。公共入口 `engine.run_backtest` 使用官方 NautilusTrader 1.231.0 的 BacktestEngine、原生订单/撮合/账户/持仓，Python 层负责交易规则、生命周期与独立参考账本。
+当前实现面向沪深普通股票与可转债（Convertible Bonds）、现金多头、多日持有、日线/分钟线研究。公共入口 `engine.run_backtest` 使用官方 NautilusTrader 1.231.0 的 BacktestEngine、原生订单/撮合/账户/持仓，Python 层负责交易规则、生命周期与独立参考账本。
+
+- **普通股票**: 支持 T+1、涨跌停拦截 (BOUNDED)、价格笼子、法定印花税 (卖出万五/千一)、双边过户费与最低 5 元佣金保底。
+- **中国可转债扩展 (Convertible Bond Extension)**: 支持 `ConvertibleBondInstrument` (1手=10张, 面值100元, tick_size=0.001) 及 `ConvertibleBondFeeModel` (法定**免征印花税**、双边过户费、佣金万一且最低 1 元)。
 
 这不是纯 Rust 主程序；官方 Python 包的执行路径含 Cython 与 Rust 组件。本阶段不包含实盘接入。
 

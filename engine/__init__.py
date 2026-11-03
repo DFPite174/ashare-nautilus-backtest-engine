@@ -14,8 +14,10 @@ from engine.market_rules import (
 )
 from engine.fee_model import (
     AShareFeeModel,
+    ConvertibleBondFeeModel,
     calculate_expected_fee,
     get_ashare_rates_for_date,
+    get_cb_rates_for_date,
 )
 from engine.golden_ledger import GoldenLedger
 from engine.order_gateway import AShareOrderGateway, OrderValidationResult
@@ -30,8 +32,10 @@ __all__ = [
     "validate_price_collar",
     "get_trading_state",
     "AShareFeeModel",
+    "ConvertibleBondFeeModel",
     "calculate_expected_fee",
     "get_ashare_rates_for_date",
+    "get_cb_rates_for_date",
     "GoldenLedger",
     "AShareOrderGateway",
     "OrderValidationResult",

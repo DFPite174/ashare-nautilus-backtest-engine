@@ -51,6 +51,26 @@ def get_ashare_rates_for_date(trade_date: Optional[str] = None) -> Dict[str, Dec
     }
 
 
+def get_cb_rates_for_date(trade_date: Optional[str] = None) -> Dict[str, Decimal]:
+    """
+    中国可转债法定费税率模型 (Convertible Bond Fee Model):
+    - 印花税: 完全免征 (0.0)
+    - 过户费 (双边): 2022-04-29 起下调为十万分之一 (0.00001)；此前为十万分之二 (0.00002)
+    - 佣金率: 万分之0.5 ~ 万一 (0.0001)，单笔最低 1 元 (无股票5元保底限制)
+    """
+    if trade_date and trade_date < "2022-04-29":
+        transfer_fee = Decimal("0.00002")
+    else:
+        transfer_fee = Decimal("0.00001")
+
+    return {
+        "commission_rate": Decimal("0.0001"),
+        "min_commission": Decimal("1.0"),
+        "stamp_duty_rate": Decimal("0.0"),  # 可转债免印花税
+        "transfer_fee_rate": transfer_fee,
+    }
+
+
 def calculate_expected_fee(
     side: str,
     qty: Decimal,
@@ -59,12 +79,16 @@ def calculate_expected_fee(
     trade_date: Optional[str] = None,
     rates: Optional[Dict[str, Decimal]] = None,
     cum_trade_val_before: Decimal = Decimal("0.0"),
+    is_convertible_bond: bool = False,
 ) -> Decimal:
     """
     【独立费用 Oracle】供测试与双轨账本独立核算每笔成交的法定应纳税费。
-    支持分批成交增量计算 (N10)。
+    支持分批成交增量计算 (N10)，支持普通 A 股股票与可转债不同费率模型。
     """
-    r = rates or get_ashare_rates_for_date(trade_date)
+    if rates is None:
+        r = get_cb_rates_for_date(trade_date) if is_convertible_bond else get_ashare_rates_for_date(trade_date)
+    else:
+        r = rates
     trade_val = qty * price
     comm_rate = r["commission_rate"]
     min_comm = r["min_commission"]
@@ -206,3 +230,45 @@ class AShareFeeModel(FeeModel):
     ) -> Money:
         """兼容别名调用"""
         return self.get_commission(order, fill_qty, fill_price, instrument)
+
+
+class ConvertibleBondFeeModel(AShareFeeModel):
+    """
+    符合中国可转债法定标准的费税计算模型 (Convertible Bond Fee Model)
+    - 卖出完全免征印花税 (stamp_duty = 0.0)
+    - 佣金率默认万一 (0.0001)，最低 1 元 (无股票 5 元保底)
+    - 双边过户费十万分之一 (0.00001)
+    """
+    def __init__(
+        self,
+        commission_rate: Optional[float] = 0.0001,
+        min_commission: Optional[float] = 1.0,
+        stamp_duty_rate: Optional[float] = 0.0,
+        transfer_fee_rate: Optional[float] = 0.00001,
+        currency: Currency = CNY,
+        scope_id: str = "cb_run",
+        current_trade_date: Optional[str] = None,
+    ):
+        super().__init__(
+            commission_rate=commission_rate,
+            min_commission=min_commission,
+            stamp_duty_rate=stamp_duty_rate,
+            transfer_fee_rate=transfer_fee_rate,
+            currency=currency,
+            scope_id=scope_id,
+            current_trade_date=current_trade_date,
+        )
+
+    def _resolve_rates(self, order: Order) -> Tuple[Decimal, Decimal, Decimal, Decimal]:
+        order_date: Optional[str] = self.current_trade_date
+        if order_date is None and hasattr(order, "ts_init") and order.ts_init > 0:
+            dt = datetime.fromtimestamp(order.ts_init / 1e9, tz=SHANGHAI_TZ)
+            order_date = dt.strftime("%Y-%m-%d")
+
+        matched = get_cb_rates_for_date(order_date)
+        comm_rate = self._custom_comm_rate if self._custom_comm_rate is not None else matched["commission_rate"]
+        min_comm = self._custom_min_comm if self._custom_min_comm is not None else matched["min_commission"]
+        stamp_rate = self._custom_stamp_rate if self._custom_stamp_rate is not None else matched["stamp_duty_rate"]
+        transfer_rate = self._custom_transfer_rate if self._custom_transfer_rate is not None else matched["transfer_fee_rate"]
+        return comm_rate, min_comm, stamp_rate, transfer_rate
+

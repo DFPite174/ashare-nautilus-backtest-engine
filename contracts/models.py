@@ -60,6 +60,7 @@ class AssetClass(str, Enum):
     FUTURE = "FUTURE"
     OPTION = "OPTION"
     FX = "FX"
+    CONVERTIBLE_BOND = "CONVERTIBLE_BOND"
 
 
 class Venue(str, Enum):
@@ -93,6 +94,23 @@ class Instrument(BaseModel):
     list_date: Optional[date] = Field(default=None, description="上市日期")
     delist_date: Optional[date] = Field(default=None, description="退市日期")
     is_suspended: bool = Field(default=False, description="当前是否停牌")
+
+
+class ConvertibleBondInstrument(Instrument):
+    """
+    中国可转债证券主数据契约模型 (Convertible Bond Contract).
+    特点:
+    - 最小交易单位: 1手 = 10张 (面值1000元)
+    - 报价单位: 元/张, 最小变动价位 0.001 元
+    - 关联正股与转股价
+    """
+    asset_class: AssetClass = Field(default=AssetClass.CONVERTIBLE_BOND)
+    lot_size: int = Field(default=10, description="买入最小整手单位: 1手 = 10张 (面值1000元)")
+    min_order_qty: int = Field(default=10, description="最低起购张数 (10张)")
+    tick_size: Decimal = Field(default=Decimal("0.001"), description="转债最小变动价位 0.001 元")
+    face_value: Decimal = Field(default=Decimal("100.0"), description="债券面值 (100元/张)")
+    underlying_symbol: Optional[str] = Field(default=None, description="对应正股代码 (例如 '600000.SH')")
+    conversion_price: Optional[Decimal] = Field(default=None, description="当前有效转股价 (元/股)")
 
 
 class Bar(BaseModel):
