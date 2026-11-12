@@ -1,97 +1,138 @@
-# ashare-nautilus-backtest-engine：沪深股票与可转债高保真回测引擎
+# A 股账户级研究回测引擎
 
-当前实现面向沪深普通股票与可转债（Convertible Bonds）、现金多头、多日持有、日线/分钟线研究。公共入口 `engine.run_backtest` 使用官方 NautilusTrader 1.231.0 的 BacktestEngine、原生订单/撮合/账户/持仓，Python 层负责交易规则、生命周期与独立参考账本。
+基于 NautilusTrader 的沪深股票与可转债研究回测内核，适用于现金多头、日线/分钟线、多证券共享资金的策略验证。
 
-- **普通股票**: 支持 T+1、涨跌停拦截 (BOUNDED)、价格笼子、法定印花税 (卖出万五/千一)、双边过户费与最低 5 元佣金保底。
-- **中国可转债扩展 (Convertible Bond Extension)**: 支持 `ConvertibleBondInstrument` (1手=10张, 面值100元, tick_size=0.001) 及 `ConvertibleBondFeeModel` (法定**免征印花税**、双边过户费、佣金万一且最低 1 元)。
+- **账户闭环**：原生订单与成交驱动资金、持仓变化，每日与独立参考账本核对。
+- **交易约束**：股票 `T+1`、可转债 `T+0`、整手/零股、停牌、涨跌停和订单资金预留。
+- **公司行为**：现金红利登记、应收与到账，送转及新增股份上市日管理。
+- **可追溯结果**：成交、拒单、每日净值，以及输入内容哈希、策略参数和环境版本清单。
 
-这不是纯 Rust 主程序；官方 Python 包的执行路径含 Cython 与 Rust 组件。本阶段不包含实盘接入。
+## 5 分钟跑通
 
-## 安装与运行
-
-本次实际验证环境：Windows x64、Python 3.12、NautilusTrader 1.231.0。公司行为送转使用仓库已有的固定 ABI Cython `.pyd`；`split_guard.py` 校验二进制和依赖指纹，跨平台或版本漂移会明确失败。
-
-在仓库根目录执行：
+> [!IMPORTANT]
+> 完整送转功能的已验证环境为 **Windows x64 / Python 3.12 / NautilusTrader 1.231.0**。送转桥接使用固定 ABI，加载时校验二进制指纹。安装与维护见 [环境说明](docs/environment.md)。
 
 ```powershell
-python -m pip install -r requirements.txt
+python -m pip install -e ".[test]"
 python -m pytest tests -q
 python examples/regular_backtest.py --bars examples/data/bars_daily.csv --rules examples/data/rules.csv --output daily-result.json
+```
+
+样例包含三天合成行情，输出原生成交与逐日对账结果，便于检查安装和接口。分钟样例每天一根 Bar：
+
+```powershell
 python examples/regular_backtest.py --bars examples/data/bars_minute.csv --frequency MINUTE --rules examples/data/rules.csv --output minute-result.json
 ```
 
-示例是三天合成行情，仅用于工程验收。分钟样例每天只有一根 Bar，不代表全天覆盖。实际研究必须自行核验分钟数据完整性及供应商时间戳约定。
-
-## 公共接口
+## 最小接口
 
 ```python
 from decimal import Decimal
 from contracts import Instrument, Venue
-from engine import run_backtest, OrderIntent
+from engine import OrderIntent, run_backtest
 from engine.data import load_bars_csv, load_rules_csv
 
-bars = load_bars_csv('bars.csv', frequency='DAY')
-rules = load_rules_csv('rules.csv')
-# 正式研究应从权威交易日历传入，包含整个回测区间内的所有交易日。
-trading_days = sorted({day for symbol, day in rules})
+bars = load_bars_csv("examples/data/bars_daily.csv")
+rules = load_rules_csv("examples/data/rules.csv")
+days = sorted({day for symbol, day in rules})  # 样例日期；正式研究传权威交易日历
 
 def signal(bar, state):
-    # state.history 仅包含已经结束的原始 Bar；state.cash / positions / sellable 可只读访问。
-    # 在这里实现选股/择时；以下仅说明返回契约。
-    return []  # 例如 [OrderIntent(bar.symbol, 'BUY', 100)]
+    if bar.end.date() == days[0]:
+        return [OrderIntent(bar.symbol, "BUY", 100)]
+    return []
 
 result = run_backtest(
-    [Instrument(symbol='600519.SH', exchange=Venue.SSE)],
+    [Instrument(symbol="600519.SH", exchange=Venue.SSE)],
     bars, rules, signal,
-    initial_cash=Decimal('100000'), participation_rate=.01,
-    trading_days=trading_days, corporate_actions=[],
+    initial_cash=Decimal("100000"),
+    participation_rate=0.01,
+    trading_days=days,
+    strategy_id="example-buy",
+    strategy_params={"quantity": 100},
 )
 print(result.to_dict())
 ```
 
-`signal(bar,state)` 每根 Bar 结束调用一次；生成的意图最早在该证券下一根 Bar 开始时执行。多证券同一时刻按固定数据顺序依次回调，横截面策略应收齐所需证券的结束 Bar 后统一决策。没有自动目标权重优化器，数量由策略返回。
+`state` 提供只读的 `cash`、`positions`、`sellable` 和 `history`。历史快照固定在回调时点，保存后不会随未来行情增长。
 
-- 无价格意图：观察下一 Bar 开盘价后提交该价格的原生 IOC 限价单，允许部分成交，未成交余量取消；并非交易所市价指令的完整模拟。
-- 显式 `limit_price`：原生 DAY 限价单，开盘可成交时使用开盘价；盘中触价按委托限价成交，日终统一撤单。
-- 无下一 Bar 的意图记入 `pending_intents`，原因 `END_OF_DATA`；不强制在最后收盘虚构平仓。
-- 挂单卖出数量先预留，撤单/拒单/到期释放；可卖数量受 T+1 和新增股上市日限制。
-- 沪深证券共享一个模拟 `ASHARE` 场所和一个 CNY 现金账户；真实交易所保留于证券主数据。该模拟场所不是实盘路由。
+### 信号与执行
 
-## 数据契约
+| 接口/意图 | 执行行为 |
+| --- | --- |
+| `signal(bar, state)` | 每根 Bar 结束回调，意图最早在该证券下一根 Bar 开始执行 |
+| `portfolio_signal(closed_bars, state)` | 同一结束时刻的输入 Bar 全部到齐后回调一次；与 `signal` 二选一 |
+| 无 `limit_price` | 观察下一 Bar 开盘报价，提交该价及配置滑点范围内的 IOC 限价单；余量取消 |
+| 显式 `limit_price` | DAY 限价单；开盘允许价格改善，盘中触价按委托限价成交；日终撤单 |
+| 同一开盘时点的组合订单 | 先卖后买；已成交卖单回款可用于买入，买单按证券代码和意图顺序处理 |
+| 买单资金预留 | 预留本金与预计费用，部分成交重算，终态释放；不足时记录 `INSUFFICIENT_CASH_WITH_FEES` |
+| 样本末尾的意图 | 保留到 `pending_intents`，标记 `END_OF_DATA` |
 
-1. **未复权 OHLC**：成交、持仓和估值使用原始价格，公司行为另行输入。不得将前/后复权行情直接送入资金回测；因子研究可独立计算复权信号。
-2. **时间**：显式时区的 `BacktestBar.start/end`，按上海时区解释交易日。日线为 09:30–15:00；分钟线须在连续交易时段内，不能跨午休或彼此重叠。
-3. **成交量**：单位为股、非负整数。Tushare 日线 `vol` 若以手计，CSV 读取时明确传 `volume_multiplier=100`；不得猜测单位。分钟接口须另核验单位与起止标签。
-4. **交易日历**：正式研究传 `trading_days`，源自交易所日历（例如已落库的 Tushare `trade_cal`）。不传时，默认使用行情首末日期内的规则日期并集；它只能发现已声明交易日的缺口，不能识别行情和规则同时漏掉的日期。
-5. **证券日规则**：`rules[(symbol, date)]` 要有 `trade_status`（OPEN/SUSPENDED/DAY_BLOCKED）、`limit_state`（BOUNDED/UNBOUNDED）以及 buy_min/buy_step/sell_min/sell_step/max_order。BOUNDED 必须提供 down_limit/up_limit；可交易 OHLC 必须落在价格边界内。规则必须使用对应历史时点的板块、ST/上市状态和官方价格边界，不能用今天的证券状态回填历史。
-6. **缺失与停牌**：每个交易日、每个已上市标的必须有规则。OPEN 缺整天 Bar 直接失败，不能当成停牌；SUSPENDED 可无 Bar。零量不成交。分钟内部缺口仍需在数据预处理阶段核验。
-7. **公司行为**：`CorporateAction` 接收登记日、除权日、派息日、新增股份上市日；现金红利必须提供登记日。每股现金红利为税前，分币 ROUND_HALF_UP；处理应收及实际到账。送转同时更新原生持仓、网关、参考账本；上市日前新增股不可卖。除权日无行情时按 `(上一估值价-每股现金红利)/(1+送转比例)` 调整估值单位。
-8. **零碎股**：公共运行器遇到账户级非整数权益时不默许丢失，要求 `reject` 或显式 `cash_in_lieu`；现金替代是研究假设，不等同于各登记结算规则的复现。`floor` 仅兼容旧独立账本接口，不适合作为普遍严格政策。
+组合信号、费用配置、滑点压力测试示例见 [研究使用指南](docs/research-guide.md)。
 
-证券提供 `list_date` / `delist_date` 时，生命周期以外的 Bar 和 OPEN 规则会直接拒绝；尚未上市或已退出样本的空仓证券不要求伪造行情。边界日期当天仍须由真实历史日规则决定可交易性，不能直接把供应商退市公告日期当成最后交易日。缺少生命周期主数据时，引擎不能推断真实上市/退市状态；本检查也不实现退市遗留持仓的估值或清算政策。
+### 成交规则速查
 
-`CorporateAction` 禁止未知字段，字段拼写错误或不支持事件必须明确失败。供应商原始响应应先按文档映射成该契约，不能直接传入所有原始字段。时间检查在日期推断和排序之前执行，无时区输入统一抛出可诊断的 `ValueError`。策略异常时先停止仍运行的 trader，再释放资源，不继续刷新未来定时事件。
+- **成交量预算**：每根 Bar 共享 `floor(volume × participation_rate)`，买卖及所有订单共同消耗；申报量另受上一根非零 Bar 已知成交量约束。
+- **价格与状态**：按历史证券日规则校验；涨停买入、跌停卖出保守阻断；进入 `SUSPENDED` / `DAY_BLOCKED` 的待提交意图在当日拒绝。
+- **撮合路径**：模型 `bar-synthetic-l2-v1` 将 OHLC 转为 O→H→L→C 合成深度，由 NT 原生 L2 撮合。
+- **滑点压力参数**：`slippage_bps=10` 表示成交价格向不利方向移动 10 个基点，按最小价位取整并受限价约束。默认值为 `0`。
 
-本地 CSV 格式见 `examples/data`。规则加载器还可接收 prev_close/issue_price，供无涨跌幅阶段的申报范围检查。仓库不会联网补齐缺失规则或静默替换数据源。
+## 输入数据契约
 
-## 成交与资金约束
+> [!NOTE]
+> 成交、持仓估值使用**未复权价格**，分红送转单独输入。因子复权信号与资金回测的原始价格应分别管理。
 
-每根 Bar 的执行预算为 `floor(实际成交量 × participation_rate)`，开盘和盘中触价、所有方向和所有订单共享；每次撮合前按剩余预算、订单剩余股数和现金上限限制可得量，成交后再次检查。策略看到的仍只有已结束行情；执行模拟器可用当前 Bar 的事后成交量限制结果，这是一项 Bar 级模型假设。
+| 数据 | 必需内容 |
+| --- | --- |
+| 行情 | 明确时区的 `start/end`、原始 OHLC、以股/张计的整数成交量；分钟 Bar 位于连续交易时段内 |
+| 日历与规则 | 权威 `trading_days`；每个存续证券交易日的状态、官方价格边界与数量规则；`OPEN` 缺行情时报错 |
+| 生命周期 | `list_date` / `delist_date` 使用经确认的生命周期语义；边界日由历史日规则确定可交易性 |
+| 公司行为 | 登记日、除权日、派息日、新股上市日及税前每股权益；零碎股显式采用 `reject` 或 `cash_in_lieu` |
 
-提交数量另受上一根非零 Bar 已知成交量的参与率预算约束，防止策略从成交反馈直接获得完整未来 Bar 容量。实际当根 Bar 容量小于申报量时允许部分成交。不开启无限流动性回退。
+完整字段、单位、缺口处理和公司行为映射见 [数据契约](docs/data-contract.md)。
 
-涨停买入、跌停卖出采取保守拦截；价格笼子在提交时以前开盘可得报价检查。执行模型 `bar-synthetic-l2-v1` 将 Bar 转为 O-H-L-C 顺序的合成深度，交给 NT 原生 L2 撮合，避免 L1 盘口耗尽后的额外滑点成交回退。它不是供应商真实 L2，也不重建盘口队列、竞价或真实逐笔路径。开盘仍按观察报价成交；盘中触价按委托限价成交，不给予 Bar 极值优价。结果的 `execution_model` 记录模型口径，详情见 [执行模型与验收](docs/execution-model.md)。
+本地 Tushare Parquet 湖可直接只读接入，使用官方日历、涨跌停和显式停牌记录：
 
-未提交的策略意图若进入的交易日为 SUSPENDED/DAY_BLOCKED，在该日开始时明确拒绝，不保留到复牌；不依赖停牌日是否存在零量占位 Bar。已提交的 DAY 单仍在日终撤销。停牌占位 Bar 仍可能影响研究历史，数据预处理应统一表示方式。
+```powershell
+python examples/validate_tushare_lake.py --root "C:\path\to\Tushare_DB" --output local-validation.json --benchmark
+```
 
-当前费用模型为仓库既有的券商佣金最低额、订单累计部分成交、印花税和过户费及其已编码历史日期，不代表任意券商或任意历史时期费率。个人投资者持有期差别化股息税、融资融券、配股、要约收购和退市结算等特殊事件未纳入公共运行器；含这些事件的样本必须另行建模后才能使用其净收益。
+该命令运行固定工程场景并输出摘要、输入指纹和负载记录。数据准备与复验见 [本地 Tushare 验证](docs/local-tushare-validation.md)。
 
-## 可核验结果
+## 输出与日终对账
 
-结果包含真实原生成交与订单终态、规则/原生拒单、持仓、原生与参考现金、公司行为现金日志、逐日 NAV、应收红利和期末未执行意图。
+| 字段 | 内容 |
+| --- | --- |
+| `fills` / `orders` | 原生成交与委托终态 |
+| `rejections` / `pending_intents` | 拒单原因、期末未执行意图 |
+| `native_cash` / `ledger_cash` / `positions` | 账户资金与期末持仓 |
+| `daily_nav` / `account_journal` | 每日净值、应收红利及公司行为现金日志 |
+| `manifest` / `execution_model` | 输入/运行哈希、策略参数、费用政策、滑点、源码指纹和环境版本 |
 
-每日核对：原生现金=参考现金；原生持仓=网关持仓=参考持仓；原生现金+持仓估值+独立应收=参考 NAV。不相等直接报错，不生成“通过”结果。估值价格是共用输入；对账不是对原始数据真实性或市场成交真实性的证明。
+每日核对以下关系，不一致时终止并报告差异：
 
-测试与限制详见 `docs/validation.md`。当前目标是这份明确输入契约下的常规 A 股策略资金回测，不是全市场、全资产、高频、集合竞价或实盘生产认证。
+```text
+原生现金 = 参考现金
+原生持仓 = 网关持仓 = 参考持仓
+原生现金 + 持仓估值 + 独立应收 = 参考 NAV
+```
 
-买单会预留申报上限本金与预计费用，部分成交后重算，取消/拒绝/过期释放；资金不足记录 INSUFFICIENT_CASH_WITH_FEES 并继续。成交前再次按实际价与累计费用限制可支付量，以覆盖部分成交舍入差异。
+## 技术栈与适用边界
+
+| 维度 | 当前能力与使用条件 | 待扩展或验证范围 |
+| --- | --- | --- |
+| 技术栈 | NT 1.231.0（Python + Cython/Rust 核心）及 Python 规则/账本层；固定 Windows 送转 ABI | 跨平台送转构建、依赖升级迁移 |
+| 策略与资产 | 沪深现金多头；股票 `T+1`、转债 `T+0` 的基础交易回测 | 融资融券、衍生品保证金、转股/赎回/到期结算 |
+| 成交模型 | Bar 合成深度、固定价格路径、共享量预算、可配置逆向滑点 | 真实盘口队列、集合竞价、盘中临停重建、校准后的市场冲击 |
+| 费用与权益 | 内置日期费率或自定义费率；税前分红、送转、零碎股显式政策 | 个人差别化股息税、配股、要约收购、退市清算、券商账单逐笔校准 |
+| 数据质量 | 输入检查、显式日历、来源及内容指纹 | 历史 vintage PIT、分钟完整性、历史股票池与所有公司行为的上游治理 |
+| 规模与运行 | 单次共享现金组合；已测规模与结果见验证文档 | 全市场多年容量、多人服务负载、生产 SLA、券商接入及重启恢复 |
+| 证据含义 | 测试、真实供应商数据回放和账户对账各自记录 | 策略 alpha、实盘成交可实现性和生产验收需独立验证 |
+
+## 延伸文档
+
+- [研究使用指南](docs/research-guide.md)：组合信号、调仓顺序、成本情景与运行归档。
+- [数据契约](docs/data-contract.md)：字段、日期、生命周期和异常语义。
+- [执行模型](docs/execution-model.md)：合成深度与价格路径假设。
+- [本地 Tushare 验证](docs/local-tushare-validation.md)：本轮场景、复验命令和证据边界。
+- [历史验证记录](docs/validation.md)：既有测试与修复记录。
+- [环境说明](docs/environment.md)：安装、ABI、打包与 CI。

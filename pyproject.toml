@@ -4,20 +4,27 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ashare-nautilus-backtest-engine"
-version = "2.0.0"
+version = "2.1.0"
 description = "A-share account-level backtest engine based on NautilusTrader"
 readme = "README.md"
 authors = [{ name = "Changlong Xie" }]
-requires-python = ">=3.12"
+requires-python = ">=3.12,<3.13"
 dependencies = [
     "nautilus_trader==1.231.0",
     "pydantic>=2.10.0",
-    "tushare>=1.4.24",
     "pandas>=2.2.0",
     "numpy>=1.26.0",
     "pyarrow>=18.0.0",
-    "pytest>=8.0.0",
 ]
+
+[project.optional-dependencies]
+test = ["pytest>=8.0.0"]
+
+[tool.setuptools]
+packages = ["engine", "contracts"]
+
+[tool.setuptools.package-data]
+engine = ["split_native.cp312-win_amd64.pyd", "split_native.pyx", "SPLIT_BUILD.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

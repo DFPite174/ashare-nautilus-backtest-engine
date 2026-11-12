@@ -1,11 +1,11 @@
 """One shared execution budget per raw bar, including opening and OHLC fills."""
-from decimal import Decimal
+from decimal import Decimal, ROUND_CEILING, ROUND_FLOOR
 from nautilus_trader.backtest.models import FillModel
 from nautilus_trader.backtest.modules import SimulationModule
 from nautilus_trader.backtest.config import SimulationModuleConfig
 from nautilus_trader.model.book import OrderBook
 from nautilus_trader.model.enums import BookType, OrderSide, BookAction
-from nautilus_trader.model.objects import Quantity
+from nautilus_trader.model.objects import Quantity, Price
 from nautilus_trader.model.data import BookOrder, OrderBookDelta, OrderBookDeltas
 
 
@@ -20,10 +20,21 @@ def synthetic_book(instrument,price,quantity,ts):
 
 
 class BarLiquidity(FillModel):
-    def __init__(self):
+    def __init__(self, slippage_bps=0):
         super().__init__()
         self.events={};self.active={};self.remaining={};self.intrabar={}
         self.affordable=None
+        self.slippage_bps=Decimal(str(slippage_bps))
+
+    def execution_price(self, price, side, instrument, limit=None):
+        px=Decimal(str(price))
+        tick=Decimal(str(instrument.price_increment))
+        buy=side==OrderSide.BUY
+        px=px*(1+(self.slippage_bps/10000 if buy else -self.slippage_bps/10000))
+        px=(px/tick).to_integral_value(rounding=ROUND_CEILING if buy else ROUND_FLOOR)*tick
+        if limit is not None:
+            px=min(px,Decimal(str(limit))) if buy else max(px,Decimal(str(limit)))
+        return Price.from_str(format(px,f'.{instrument.price_precision}f'))
 
     def begin(self,data):
         iid=str(data.instrument_id if hasattr(data,'instrument_id') else data.bar_type.instrument_id)
@@ -43,6 +54,7 @@ class BarLiquidity(FillModel):
         qty=min(self.remaining.get(self.active.get(iid),0),int(Decimal(str(order.leaves_qty))))
         # Touch inside a bar fills at the submitted limit, never at the bar extreme.
         price=order.price if self.intrabar.get(iid) else (best_ask if order.side==OrderSide.BUY else best_bid)
+        price=self.execution_price(price,order.side,instrument,order.price)
         if self.affordable is not None and order.side==OrderSide.BUY:
             qty=self.affordable(order,price,qty)
         if qty:

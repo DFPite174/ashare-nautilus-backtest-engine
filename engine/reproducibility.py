@@ -1,0 +1,87 @@
+"""Content-addressed inputs and immutable, constant-copy research history."""
+from collections.abc import Sequence
+from dataclasses import asdict, is_dataclass
+from datetime import date, datetime, timezone
+from decimal import Decimal
+import hashlib
+import importlib.metadata
+import inspect
+import json
+import platform
+import subprocess
+from pathlib import Path
+
+
+class HistorySnapshot(Sequence):
+    """A captured prefix of an append-only list; never exposes later bars."""
+    __slots__ = ('__bars', '__length')
+
+    def __init__(self, bars):
+        self.__bars, self.__length = bars, len(bars)
+
+    def __len__(self):
+        return self.__length
+
+    def __getitem__(self, index):
+        if isinstance(index, slice):
+            return tuple(self.__bars[n] for n in range(*index.indices(self.__length)))
+        if index < 0: index += self.__length
+        if not 0 <= index < self.__length: raise IndexError(index)
+        return self.__bars[index]
+
+
+def canonical(value):
+    if hasattr(value, 'model_dump'): return canonical(value.model_dump(mode='json'))
+    if is_dataclass(value): return canonical(asdict(value))
+    if isinstance(value, dict): return {str(k): canonical(v) for k, v in sorted(value.items(), key=lambda item: str(item[0]))}
+    if isinstance(value, (tuple, list)): return [canonical(v) for v in value]
+    if isinstance(value, Decimal): return format(value.normalize(), 'f')
+    if isinstance(value, datetime): return value.astimezone(timezone.utc).isoformat()
+    if isinstance(value, date): return value.isoformat()
+    return value
+
+
+def digest(value):
+    raw = json.dumps(canonical(value), sort_keys=True, ensure_ascii=False, separators=(',', ':'), allow_nan=False)
+    return hashlib.sha256(raw.encode('utf-8')).hexdigest()
+
+
+def build_manifest(instruments, bars, rules, actions, sessions, fee, signal, *, initial_cash,
+                   participation_rate, slippage_bps, strategy_id, strategy_params, data_snapshot_id):
+    root = Path(__file__).resolve().parents[1]
+    try:
+        commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=root, stderr=subprocess.DEVNULL, text=True).strip()
+    except (OSError, subprocess.CalledProcessError):
+        commit = None
+    sources = {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest()
+               for folder in ('engine', 'contracts') for p in sorted((root / folder).glob('*.py'))}
+    for p in sorted((root / 'engine').glob('*.pyd')):
+        sources[str(p.relative_to(root))] = hashlib.sha256(p.read_bytes()).hexdigest()
+    try:
+        signal_hash = hashlib.sha256(inspect.getsource(signal).encode()).hexdigest()
+    except (TypeError, OSError): signal_hash = None
+    input_hash = digest({'instruments': sorted(instruments, key=lambda i:i.symbol),
+        'bars': sorted(bars, key=lambda b:(b.start,b.symbol)), 'rules': rules,
+        'actions': sorted(actions, key=lambda a:(a.symbol,a.ex_date)), 'calendar':sessions})
+    # Explicit configuration only: never serialize function globals, environment variables or credentials.
+    schedules={};symbol_policies={}
+    for symbol in sorted(i.symbol for i in instruments):
+        schedule={};previous=None
+        for day in sessions:
+            rates=fee.rates_for(symbol,str(day))
+            if rates!=previous:schedule[str(day)]=rates;previous=rates
+        policy=digest(schedule)
+        schedules[policy]=schedule;symbol_policies[symbol]=policy
+    config = dict(initial_cash=str(initial_cash), participation_rate=str(participation_rate),
+                  slippage_bps=str(slippage_bps), execution_policy='same-open-sell-before-buy-v1',
+                  execution_model='bar-synthetic-l2-v1',
+                  fee_schedules=schedules,symbol_fee_policy=symbol_policies)
+    manifest = dict(schema_version=1, input_sha256=input_hash, data_snapshot_id=data_snapshot_id,
+        strategy_id=strategy_id or getattr(signal,'__qualname__',type(signal).__name__),
+        strategy_source_sha256=signal_hash, strategy_params=canonical(strategy_params or {}),
+        code_commit=commit, source_sha256=digest(sources),
+        environment={'python':platform.python_version(), 'platform':platform.platform(),
+                     **{name:importlib.metadata.version(name) for name in ('nautilus_trader','pydantic','numpy','pandas','pyarrow')}},
+        config=canonical(config))
+    manifest['run_sha256'] = digest(manifest)
+    return manifest

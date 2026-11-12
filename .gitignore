@@ -12,3 +12,9 @@ jobs/
 snapshots/
 cache/
 *.pyd.bak
+build/
+dist/
+*.egg-info/
+local-validation*.json
+daily-result.json
+minute-result.json

@@ -1,0 +1,32 @@
+name: Windows research engine
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  tests:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.10'
+          architecture: x64
+          cache: pip
+      - name: Install tested dependencies
+        run: python -m pip install -e ".[test]" -c requirements-tested.txt
+      - name: Test account and native bridge
+        run: python -m pytest -q
+      - name: Exercise example
+        run: python examples/regular_backtest.py --bars examples/data/bars_daily.csv --rules examples/data/rules.csv --output daily-result.json
+      - name: Build platform wheel
+        run: python -m pip wheel --no-deps --wheel-dir dist .
+      - name: Install wheel outside checkout
+        shell: pwsh
+        run: |
+          $auditWheel = (Get-ChildItem dist/*.whl).FullName
+          python -m pip install --no-deps --force-reinstall $auditWheel
+          Push-Location $env:RUNNER_TEMP
+          python -c "from engine.split_guard import load_bridge; load_bridge(); print('Installed native bridge verified')"
+          Pop-Location

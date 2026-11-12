@@ -17,7 +17,8 @@ class GoldenLedger:
     独立参考会计账本：以高精度 Decimal 进行现金与持仓复核
     """
 
-    def __init__(self, initial_cash: Decimal):
+    def __init__(self, initial_cash: Decimal, t0_symbols=()):
+        self.t0_symbols = frozenset(t0_symbols)
         if initial_cash <= Decimal("0.0"):
             raise ValueError("Initial cash must be positive")
         self.initial_cash = initial_cash
@@ -65,7 +66,7 @@ class GoldenLedger:
         for sym, lot_list in self.lots.items():
             tradable_qty = Decimal("0.0")
             for lot_date, qty in lot_list:
-                if lot_date < trade_date:
+                if lot_date < trade_date or sym in self.t0_symbols:
                     tradable_qty += qty
             self.tradable_positions[sym] = tradable_qty
 
@@ -115,6 +116,8 @@ class GoldenLedger:
             if fill.symbol not in self.lots:
                 self.lots[fill.symbol] = []
             self.lots[fill.symbol].append((trade_date, fill.quantity))
+            if fill.symbol in self.t0_symbols:
+                self.tradable_positions[fill.symbol] = self.tradable_positions.get(fill.symbol, Decimal(0)) + fill.quantity
 
         elif fill.side == OrderSide.SELL:
             current_tradable = self.tradable_positions.get(fill.symbol, Decimal("0.0"))
@@ -125,7 +128,7 @@ class GoldenLedger:
             rem = fill.quantity
             new_lots = []
             for lot_date, q in self.lots.get(fill.symbol, []):
-                if rem > 0 and lot_date < trade_date:
+                if rem > 0 and (lot_date < trade_date or fill.symbol in self.t0_symbols):
                     if q <= rem:
                         rem -= q
                     else:

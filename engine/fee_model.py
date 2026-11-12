@@ -143,10 +143,21 @@ class AShareFeeModel(FeeModel):
         if getattr(self, "is_cb_model", False):
             return True
         iid_str = str(order.instrument_id) if hasattr(order, "instrument_id") else ""
-        raw_sym = iid_str.split(".")[0]
-        sym = raw_sym.split("-")[0] if "-" in raw_sym else raw_sym
+        raw_sym = iid_str.rsplit(".", 1)[0]
+        sym = raw_sym.split("-")[0] if "-" in raw_sym else raw_sym.split('.')[0]
         cb_set = getattr(self, "cb_symbols", set())
         return iid_str in cb_set or raw_sym in cb_set or sym in cb_set
+
+    def rates_for(self, symbol: str, trade_date: str) -> Dict[str, Decimal]:
+        """Export configuration, independently of native order accumulators."""
+        matched = get_cb_rates_for_date(trade_date) if getattr(self, 'is_cb_model', False) or symbol in self.cb_symbols else get_ashare_rates_for_date(trade_date)
+        overrides = dict(commission_rate=self._custom_comm_rate,min_commission=self._custom_min_comm,
+                         stamp_duty_rate=self._custom_stamp_rate,transfer_fee_rate=self._custom_transfer_rate)
+        result = {key:custom if custom is not None else matched[key] for key,custom in overrides.items()}
+        # Match the legacy native API: baseline tax overrides retain historical dates.
+        for key, baseline in (('stamp_duty_rate', Decimal('.0005')), ('transfer_fee_rate', Decimal('.00001'))):
+            if result[key] == baseline and not getattr(self,'is_cb_model',False): result[key] = matched[key]
+        return result
 
     def set_scope(self, scope_id: str) -> None:
         """设置运行命名空间并重置缓存"""

@@ -75,7 +75,8 @@ class AShareOrderGateway:
     工业级 A 股订单网关与挂单库存状态机
     """
 
-    def __init__(self):
+    def __init__(self, t0_symbols=()):
+        self.t0_symbols = frozenset(t0_symbols)
         # 结算持仓与卖单活动预留：symbol -> Decimal
         self._settled_shares: Dict[str, Decimal] = {}
         self._reserved_sell_shares: Dict[str, Decimal] = {}
@@ -432,9 +433,10 @@ class AShareOrderGateway:
         self._order_cum_filled_qty[order_id_str] = cum_qty
 
         if event.order_side == OrderSide.BUY:
-            if symbol not in self._bought_lots:
-                self._bought_lots[symbol] = []
-            self._bought_lots[symbol].append((fill_date, fill_qty))
+            if symbol in self.t0_symbols:
+                self._settled_shares[symbol] = self._settled_shares.get(symbol, Decimal(0)) + fill_qty
+            else:
+                self._bought_lots.setdefault(symbol, []).append((fill_date, fill_qty))
         elif event.order_side == OrderSide.SELL:
             # 扣除已预留量
             current_reserved = self._reserved_sell_shares.get(symbol, Decimal("0"))
