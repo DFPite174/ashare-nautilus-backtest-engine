@@ -28,6 +28,7 @@ from engine.order_gateway import AShareOrderGateway
 from engine.split_guard import load_bridge
 from engine.liquidity import BarLiquidity, LiquidityModule, synthetic_book
 from engine.reproducibility import HistorySnapshot, build_manifest
+from engine.intents import OrderIntent, validate_intents
 
 TZ = ZoneInfo("Asia/Shanghai")
 SIM = Venue("ASHARE")
@@ -55,19 +56,18 @@ class BacktestBar:
 
 
 @dataclass(frozen=True)
-class OrderIntent:
-    symbol: str
-    side: str
-    quantity: int
-    limit_price: Decimal | None = None
-
-
-@dataclass(frozen=True)
 class ResearchState:
     cash: Decimal
     positions: object
     sellable: object
     history: object
+    as_of: datetime | None = None
+    available_cash: Decimal = D(0)
+    reserved_cash: Decimal = D(0)
+    receivables: Decimal = D(0)
+    nav: Decimal = D(0)
+    valuation_prices: object = field(default_factory=dict)
+    valuation_times: object = field(default_factory=dict)
 
 
 @dataclass
@@ -83,6 +83,7 @@ class BacktestResult:
     pending_intents: list
     manifest: dict = field(default_factory=dict)
     execution_model: str = "bar-synthetic-l2-v1: bar-derived synthetic L2 with native NT matching; next-bar-open IOC; DAY limits: open price improvement, resting limits at limit; O-H-L-C path; shared bar volume cap; inactive-session pending intents rejected; no observed L2/queue/auction reconstruction"
+    schema_version: int = 2
 
     def to_dict(self):
         from dataclasses import asdict
@@ -195,13 +196,18 @@ class _ResearchStrategy(Strategy):
         self.open_quotes={};self.closed_groups=defaultdict(list);self.group_sizes=defaultdict(int)
         for b in bars:self.group_sizes[nanos(b.end)]+=1
         self.history=defaultdict(list);self.pending=[];self.last_close={};self.current_day=None;self.closed=set()
+        self.valuation_times={};self.seen_intent_ids=set();self.order_intent_ids={}
         self.fills=[];self.rejections=[];self.nav=[];self.fee_values={};self.native_receivables={}
         self.lookup={(str(native[b.symbol].id),nanos(b.end)):b for b in bars}
         self.by_id={str(i.id):s for s,i in native.items()}
         self.by_day=defaultdict(list)
         self.precisions={s: (3 if inst.tick_size < D('.01') else 2) for s, inst in master.items()}
         for b in bars:self.by_day[b.end.astimezone(TZ).date()].append(b)
+        self.ex_actions=defaultdict(list);self.pay_actions=defaultdict(list);self.record_actions=defaultdict(list)
         for a in actions:
+            self.ex_actions[a.ex_date].append(a)
+            self.pay_actions[a.pay_date or a.ex_date].append(a)
+            if a.record_date:self.record_actions[a.record_date].append(a)
             self.ledger.register_corporate_action(a)
             if a.record_date and a.record_date<sessions[0]:
                 self.ledger.dividend_entitlements[f"{a.symbol}_{a.ex_date}"]=D(0)
@@ -239,6 +245,11 @@ class _ResearchStrategy(Strategy):
     def _native_quantity(self,symbol):
         return D(str(self.portfolio.net_position(self.native[symbol].id)))
 
+    def _reject_intent(self,intent,reason,timestamp):
+        row={'symbol':intent.symbol,'reason':reason,'time':timestamp}
+        if intent.intent_id is not None:row['intent_id']=intent.intent_id
+        self.rejections.append(row)
+
     def _start_day(self,event):
         day=datetime.fromtimestamp(event.ts_event/1e9,TZ).date()
         if day in self.sessions:
@@ -248,10 +259,10 @@ class _ResearchStrategy(Strategy):
             for created,intent in self.pending:
                 status=self.rules.get((intent.symbol,day),{}).get('trade_status','DAY_BLOCKED')
                 if created<event.ts_event and status!='OPEN':
-                    self.rejections.append({'symbol':intent.symbol,'reason':status,'time':event.ts_event})
+                    self._reject_intent(intent,status,event.ts_event)
                 else:remaining.append((created,intent))
             self.pending=remaining
-        for a in self.actions:
+        for a in self.ex_actions.get(day, ()):
             if a.ex_date==day:
                 ratio=D(1)+a.bonus_ratio+a.reserve_ratio
                 if ratio>1:
@@ -273,34 +284,36 @@ class _ResearchStrategy(Strategy):
                     adjusted=(self.last_close[a.symbol]-a.cash_div)/ratio
                     if adjusted<=0:raise ValueError('Invalid ex-date valuation reference')
                     self.last_close[a.symbol]=adjusted
+                    self.valuation_times[a.symbol]=datetime.fromtimestamp(event.ts_event/1e9,TZ)
         self.ledger.process_corporate_actions_for_date(str(day))
-        for a in self.actions:
+        for a in self.pay_actions.get(day, ()):
             if (a.pay_date or a.ex_date)==day and a.cash_div:
                 self.cash_module.pay_dividend(a,str(day));self.native_receivables.pop(action_id(a),None)
 
-    def _state(self):
+    def _state(self, as_of=None):
+        reserved=sum((r['amount'] for r in self.buy_reservations.values()),D(0))
+        receivables=sum(self.ledger.receivable_dividends.values(),D(0))
+        nav=self.ledger.cash+receivables+sum((qty*self.last_close[s] for s,qty in self.ledger.positions.items() if qty),D(0))
         return ResearchState(self.ledger.cash,MappingProxyType(dict(self.ledger.positions)),
                              MappingProxyType({s:self.gateway.get_sellable_qty(s) for s in self.master}),
-                             MappingProxyType({s:HistorySnapshot(v) for s,v in self.history.items()}))
+                             MappingProxyType({s:HistorySnapshot(v) for s,v in self.history.items()}),
+                             as_of,self.ledger.cash-reserved,reserved,receivables,nav,
+                             MappingProxyType(dict(self.last_close)),MappingProxyType(dict(self.valuation_times)))
 
     def _signal(self,b,update_price=True):
-        if update_price:self.last_close[b.symbol]=D(str(b.close))
+        if update_price:
+            self.last_close[b.symbol]=D(str(b.close));self.valuation_times[b.symbol]=b.end
         self.history[b.symbol].append(b)
         if self.portfolio_signal is not None:
             ts=nanos(b.end);self.closed_groups[ts].append(b)
             if len(self.closed_groups[ts]) < self.group_sizes[ts]:return
             closed=tuple(sorted(self.closed_groups.pop(ts),key=lambda item:item.symbol))
-            intents=self.portfolio_signal(closed,self._state()) or []
+            intents=self.portfolio_signal(closed,self._state(b.end)) or []
         else:
-            intents=self.signal(b,self._state()) or []
-        for i in intents:
-            if not isinstance(i,OrderIntent) or i.symbol not in self.master or i.side.upper() not in {'BUY','SELL'} or not isinstance(i.quantity,int) or i.quantity<=0:
-                raise ValueError("Invalid strategy order intent")
-            if i.limit_price is not None:
-                px=D(str(i.limit_price))
-                if not px.is_finite() or px<=0 or px%self.master[i.symbol].tick_size:
-                    raise ValueError('Invalid strategy limit price or price tick')
-            self.pending.append((nanos(b.end),i))
+            intents=self.signal(b,self._state(b.end)) or []
+        for i in validate_intents(intents,self.master,b.end,self.seen_intent_ids):
+            earliest=max(nanos(b.end),nanos(i.earliest_execution)) if i.earliest_execution else nanos(b.end)
+            self.pending.append((earliest,i))
 
     def _inactive_bar(self,b):
         day=b.end.astimezone(TZ).date()
@@ -308,7 +321,7 @@ class _ResearchStrategy(Strategy):
         remaining=[]
         for created,intent in self.pending:
             if intent.symbol==b.symbol and created<=nanos(b.start):
-                self.rejections.append({'symbol':b.symbol,'reason':reason,'time':nanos(b.end)})
+                self._reject_intent(intent,reason,nanos(b.end))
             else:remaining.append((created,intent))
         self.pending=remaining
         if b not in self.history[b.symbol]:self._signal(b,update_price=self.rules[(b.symbol,day)]['trade_status']=='OPEN')
@@ -320,10 +333,12 @@ class _ResearchStrategy(Strategy):
         self.open_quotes[str(tick.instrument_id)]=tick
 
     def _execute_open(self,event):
+        if not self.pending:return
         ticks=sorted((tick for tick in self.open_quotes.values() if tick.ts_event==event.ts_event-2),key=lambda tick:str(tick.instrument_id))
         for tick in ticks:self._submit_open(tick,'SELL')
 
     def _execute_buys(self,event):
+        if not self.pending:return
         ticks=sorted((tick for tick in self.open_quotes.values() if tick.ts_event==event.ts_event-3),key=lambda tick:str(tick.instrument_id))
         for tick in ticks:self._submit_open(tick,'BUY')
 
@@ -332,6 +347,7 @@ class _ResearchStrategy(Strategy):
             cum_trade_val_before=before,rates=self.fee_model.rates_for(symbol,str(day)))
 
     def _submit_open(self,tick,phase):
+        if not self.pending:return
         symbol=self.by_id[str(tick.instrument_id)];day=datetime.fromtimestamp(tick.ts_event/1e9,TZ).date()
         previous_volume=next((b.volume for b in reversed(self.history[symbol]) if b.volume>0),0)
         budget_key=(symbol,tick.ts_event)
@@ -342,7 +358,7 @@ class _ResearchStrategy(Strategy):
             if intent.symbol!=symbol or created>tick.ts_event or intent.side.upper()!=phase:
                 remaining.append((created,intent));continue
             if intent.quantity>available:
-                self.rejections.append({'symbol':symbol,'reason':'PARTICIPATION_LIMIT','time':tick.ts_init});continue
+                self._reject_intent(intent,'PARTICIPATION_LIMIT',tick.ts_init);continue
             side=OrderSide.BUY if intent.side.upper()=='BUY' else OrderSide.SELL
             # IOC at the observed open avoids NT market-order empty-book fallback.
             args=dict(instrument_id=tick.instrument_id,order_side=side,quantity=Quantity.from_int(intent.quantity),time_in_force=TimeInForce.IOC if intent.limit_price is None else TimeInForce.DAY)
@@ -353,12 +369,13 @@ class _ResearchStrategy(Strategy):
                 cost=D(str(order.price))*intent.quantity
                 cost+=self._expected_fee('BUY',D(intent.quantity),D(str(order.price)),symbol=symbol,day=day)
                 if cost>self.ledger.cash-sum((r['amount'] for r in self.buy_reservations.values()),D(0)):
-                    self.rejections.append({'symbol':symbol,'reason':'INSUFFICIENT_CASH_WITH_FEES','time':tick.ts_init});continue
+                    self._reject_intent(intent,'INSUFFICIENT_CASH_WITH_FEES',tick.ts_init);continue
             r=self.gateway.validate_and_reserve(order,self.rules[(symbol,day)],{'close':tick.ask_price.as_double(),'volume':max(available,1),'execution_ts':tick.ts_init},tick.ask_price.as_double() if side==OrderSide.BUY else tick.bid_price.as_double())
             if r.is_valid:
                 if side==OrderSide.BUY:self.buy_reservations[str(order.client_order_id)]={'amount':cost,'quantity':D(intent.quantity),'price':D(str(order.price))}
+                if intent.intent_id is not None:self.order_intent_ids[str(order.client_order_id)]=intent.intent_id
                 self.submit_order(order);available-=intent.quantity
-            else:self.rejections.append({'symbol':symbol,'reason':r.rejection_reason,'time':tick.ts_init})
+            else:self._reject_intent(intent,r.rejection_reason,tick.ts_init)
         self.pending=remaining
         self.submission_budget[budget_key]=available
 
@@ -379,6 +396,9 @@ class _ResearchStrategy(Strategy):
         self.liquidity.consume(e.instrument_id,e.last_qty)
         symbol=self.by_id[str(e.instrument_id)];day=self.gateway.on_order_filled(e)
         qty=D(str(e.last_qty));px=D(str(e.last_px));fee=D(str(e.commission.as_double()))
+        valued_at=datetime.fromtimestamp(e.ts_event/1e9,TZ)
+        if symbol not in self.valuation_times or self.valuation_times[symbol]<valued_at:
+            self.last_close[symbol]=px;self.valuation_times[symbol]=valued_at
         key=str(e.client_order_id);before=self.fee_values.get(key,D(0))
         expected=self._expected_fee(e.order_side.name,qty,px,symbol=symbol,day=day,before=before)
         if fee!=expected:raise RuntimeError(f"Native fee mismatch: {fee} != {expected}")
@@ -390,6 +410,7 @@ class _ResearchStrategy(Strategy):
             else:
                 reserve['amount']=reserve['quantity']*reserve['price']+self._expected_fee('BUY',reserve['quantity'],reserve['price'],symbol=symbol,day=day,before=self.fee_values[key])
         self.fills.append({'symbol':symbol,'side':e.order_side.name,'quantity':str(qty),'price':str(px),'fee':str(fee),'time':e.ts_event,'order_id':key})
+        if key in self.order_intent_ids:self.fills[-1]['intent_id']=self.order_intent_ids[key]
 
     def on_order_canceled(self,e):
         self.gateway.on_order_canceled(str(e.client_order_id));self.buy_reservations.pop(str(e.client_order_id),None)
@@ -398,9 +419,11 @@ class _ResearchStrategy(Strategy):
     def on_order_rejected(self,e):
         self.buy_reservations.pop(str(e.client_order_id),None)
         self.gateway.on_order_rejected(str(e.client_order_id));self.rejections.append({'symbol':self.by_id[str(e.instrument_id)],'reason':str(e.reason),'time':e.ts_event})
+        if str(e.client_order_id) in self.order_intent_ids:self.rejections[-1]['intent_id']=self.order_intent_ids[str(e.client_order_id)]
     def on_order_denied(self,e):
         self.buy_reservations.pop(str(e.client_order_id),None)
         self.gateway.on_order_denied(str(e.client_order_id));self.rejections.append({'symbol':self.by_id[str(e.instrument_id)],'reason':str(e.reason),'time':e.ts_event})
+        if str(e.client_order_id) in self.order_intent_ids:self.rejections[-1]['intent_id']=self.order_intent_ids[str(e.client_order_id)]
 
     def _close_day(self,event):
         day=datetime.fromtimestamp(event.ts_event/1e9,TZ).date()
@@ -409,6 +432,13 @@ class _ResearchStrategy(Strategy):
         self.gateway.on_session_close()
         for b in self.by_day[day]:
             if (b.volume==0 or self.rules[(b.symbol,day)]['trade_status']!='OPEN') and b not in self.history[b.symbol]:self._inactive_bar(b)
+        remaining=[]
+        for eligible,intent in self.pending:
+            status=self.rules.get((intent.symbol,day),{}).get('trade_status','DAY_BLOCKED')
+            # A close-time decision belongs to a later bar, not this session.
+            if eligible<event.ts_event and status!='OPEN':self._reject_intent(intent,status,event.ts_event)
+            else:remaining.append((eligible,intent))
+        self.pending=remaining
         prices={}
         for symbol,qty in self.ledger.positions.items():
             if qty:
@@ -417,7 +447,7 @@ class _ResearchStrategy(Strategy):
         # Also snapshot known non-held symbols, needed for record-day and later split valuation.
         prices.update(self.last_close)
         nav=self.ledger.mark_to_market(str(day),prices)
-        for a in self.actions:
+        for a in self.record_actions.get(day, ()):
             if a.record_date==day:self.cash_module.record_entitlement(a,self._native_quantity(a.symbol))
         native_cash=D(str(self.portfolio.account(SIM).balance_total(CNY).as_double()))
         native_positions={s:self._native_quantity(s) for s in self.master}
@@ -488,7 +518,12 @@ def run_backtest(instruments, bars, rules, signal=None, *, corporate_actions=(),
         eng.run(start=at(sessions[0],0),end=at(sessions[-1],15))
         if len(strategy.nav)!=len(sessions):raise RuntimeError("Missing daily reconciliation")
         native_cash=D(str(eng.portfolio.account(SIM).balance_total(CNY).as_double()))
-        return BacktestResult(native_cash,strategy.ledger.cash,{s:strategy.ledger.positions.get(s,D(0)) for s in master},strategy.fills,strategy.rejections,strategy.nav,list(cash_module.journal),[{'id':str(o.client_order_id),'status':o.status.name,'quantity':str(o.quantity),'filled_quantity':str(o.filled_qty)} for o in eng.cache.orders()],[{'symbol':i.symbol,'side':i.side,'quantity':i.quantity,'reason':'END_OF_DATA'} for _,i in strategy.pending],manifest)
+        orders=[{'id':str(o.client_order_id),'status':o.status.name,'quantity':str(o.quantity),'filled_quantity':str(o.filled_qty),
+                 **({'intent_id':strategy.order_intent_ids[str(o.client_order_id)]} if str(o.client_order_id) in strategy.order_intent_ids else {})} for o in eng.cache.orders()]
+        pending=[{'symbol':i.symbol,'side':i.side,'quantity':i.quantity,'reason':'END_OF_DATA',
+                  **({'intent_id':i.intent_id} if i.intent_id is not None else {}),
+                  **({'earliest_execution':i.earliest_execution.isoformat()} if i.earliest_execution else {})} for _,i in strategy.pending]
+        return BacktestResult(native_cash,strategy.ledger.cash,{s:strategy.ledger.positions.get(s,D(0)) for s in master},strategy.fills,strategy.rejections,strategy.nav,list(cash_module.journal),orders,pending,manifest)
     finally:
         try:
             # Kernel disposal stops other engines, but not a still-running trader.

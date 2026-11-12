@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ashare-nautilus-backtest-engine"
-version = "2.1.0"
-description = "A-share account-level backtest engine based on NautilusTrader"
+version = "2.2.0"
+description = "A-share execution replay and independent account validation on NautilusTrader"
 readme = "README.md"
 authors = [{ name = "Changlong Xie" }]
 requires-python = ">=3.12,<3.13"

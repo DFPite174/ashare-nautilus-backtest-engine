@@ -1,6 +1,8 @@
 # A 股账户级研究回测引擎
 
-基于 NautilusTrader 的沪深股票与可转债研究回测内核，适用于现金多头、日线/分钟线、多证券共享资金的策略验证。
+基于 NautilusTrader（NT）的 A 股规则与账户适配内核，面向上游研究筛出的候选策略，执行沪深现金多头、日线/分钟线、多证券共享资金的账户回放与独立核验。支持普通股及基础可转债交易，具体边界见 [能力矩阵](docs/capabilities.md)。
+
+推荐分工：**列式数据与信号研究 → 快速账户初筛 → 本项目的 NT 执行回放与独立核验 → 未来实盘系统**。上游负责大范围因子计算、参数搜索和快速账户筛选；本项目负责规则、委托、成交与账本检查。未来实盘接入、风控与恢复需另行建设和验收；分层方案不表示现有自动化对接已完成。详见 [分层架构](docs/architecture.md)。
 
 - **账户闭环**：原生订单与成交驱动资金、持仓变化，每日与独立参考账本核对。
 - **交易约束**：股票 `T+1`、可转债 `T+0`、整手/零股、停牌、涨跌停和订单资金预留。
@@ -53,7 +55,9 @@ result = run_backtest(
 print(result.to_dict())
 ```
 
-`state` 提供只读的 `cash`、`positions`、`sellable` 和 `history`。历史快照固定在回调时点，保存后不会随未来行情增长。
+`state` 提供只读的 `cash`、`positions`、`sellable` 和 `history`，以及 `as_of`、`available_cash`、`reserved_cash`、`receivables`、`nav`、`valuation_prices`、`valuation_times`。历史快照固定在回调时点，保存后不会随未来行情增长；各证券估值时间可能不同，详见 [账户快照契约](docs/account-contract.md)。
+
+`OrderIntent` 可附带运行内唯一的 `intent_id` 和带时区的 `earliest_execution`；时间门槛不改变 IOC/DAY 语义，详见 [意图契约](docs/order-intents.md)。已有目标权重可通过纯函数 `plan_rebalance` 生成可检查的普通股数量计划，再由调用者交给回放；它按当前快照估算费用和现金，不提交订单，详见 [离线调仓适配](docs/rebalance.md)。
 
 ### 信号与执行
 
@@ -118,6 +122,8 @@ python examples/validate_tushare_lake.py --root "C:\path\to\Tushare_DB" --output
 
 ## 技术栈与适用边界
 
+本项目使用 OHLC 派生合成深度，不重建真实 L2。已完成一次 500 股、5 年的本地工程运行；该记录不构成全市场分钟容量、多人并发或生产服务等级（SLA）承诺。历史版本时点一致性（vintage PIT）、真实转债数据回放与实盘尚未验收，完整状态见 [能力矩阵](docs/capabilities.md)。
+
 | 维度 | 当前能力与使用条件 | 待扩展或验证范围 |
 | --- | --- | --- |
 | 技术栈 | NT 1.231.0（Python + Cython/Rust 核心）及 Python 规则/账本层；固定 Windows 送转 ABI | 跨平台送转构建、依赖升级迁移 |
@@ -130,6 +136,13 @@ python examples/validate_tushare_lake.py --root "C:\path\to\Tushare_DB" --output
 
 ## 延伸文档
 
+- [分层改造第一批验收](docs/layered-batch1-validation.md)：2.2.0 接口、完整测试、500 股五年三次复测及尚未达到的性能目标。
+
+- [分层架构](docs/architecture.md)：研究、初筛、执行核验与未来实盘的职责。
+- [能力矩阵](docs/capabilities.md)：普通股、基础可转债及证据边界。
+- [账户快照契约](docs/account-contract.md)：可用资金、应收、估值时间与日终核验。
+- [意图契约](docs/order-intents.md)：字段校验、唯一标识与最早执行时间。
+- [离线调仓适配](docs/rebalance.md)：目标权重到数量计划及费用/成交假设。
 - [研究使用指南](docs/research-guide.md)：组合信号、调仓顺序、成本情景与运行归档。
 - [数据契约](docs/data-contract.md)：字段、日期、生命周期和异常语义。
 - [执行模型](docs/execution-model.md)：合成深度与价格路径假设。

@@ -1,6 +1,6 @@
 """Content-addressed inputs and immutable, constant-copy research history."""
 from collections.abc import Sequence
-from dataclasses import asdict, is_dataclass
+from dataclasses import fields, is_dataclass
 from datetime import date, datetime, timezone
 from decimal import Decimal
 import hashlib
@@ -32,7 +32,7 @@ class HistorySnapshot(Sequence):
 
 def canonical(value):
     if hasattr(value, 'model_dump'): return canonical(value.model_dump(mode='json'))
-    if is_dataclass(value): return canonical(asdict(value))
+    if is_dataclass(value): return {f.name: canonical(getattr(value, f.name)) for f in fields(value)}
     if isinstance(value, dict): return {str(k): canonical(v) for k, v in sorted(value.items(), key=lambda item: str(item[0]))}
     if isinstance(value, (tuple, list)): return [canonical(v) for v in value]
     if isinstance(value, Decimal): return format(value.normalize(), 'f')
@@ -42,8 +42,28 @@ def canonical(value):
 
 
 def digest(value):
-    raw = json.dumps(canonical(value), sort_keys=True, ensure_ascii=False, separators=(',', ':'), allow_nan=False)
-    return hashlib.sha256(raw.encode('utf-8')).hexdigest()
+    encoder = json.JSONEncoder(sort_keys=True, ensure_ascii=False, separators=(',', ':'), allow_nan=False)
+    result = hashlib.sha256()
+    def write(item, depth=0):
+        # Stream collection rows; C JSON encoding handles each bounded row.
+        if depth < 2 and isinstance(item, dict):
+            normalized = {str(k): v for k, v in sorted(item.items(), key=lambda pair: str(pair[0]))}
+            result.update(b'{')
+            for n, (key, child) in enumerate(sorted(normalized.items())):
+                if n: result.update(b',')
+                result.update(encoder.encode(key).encode('utf-8'));result.update(b':')
+                write(child, depth+1)
+            result.update(b'}')
+        elif depth < 2 and isinstance(item, (list, tuple)):
+            result.update(b'[')
+            for n, child in enumerate(item):
+                if n: result.update(b',')
+                write(child, depth+1)
+            result.update(b']')
+        else:
+            result.update(encoder.encode(canonical(item)).encode('utf-8'))
+    write(value)
+    return result.hexdigest()
 
 
 def build_manifest(instruments, bars, rules, actions, sessions, fee, signal, *, initial_cash,
