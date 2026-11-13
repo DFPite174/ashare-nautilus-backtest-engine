@@ -465,7 +465,9 @@ class _ResearchStrategy(Strategy):
     def _close_day(self,event):
         day=datetime.fromtimestamp(event.ts_event/1e9,TZ).date()
         if day in self.closed:return
-        for inst in self.native.values():self.cancel_all_orders(inst.id)
+        active_symbols=set(self.gateway._order_symbol.values())
+        for symbol,inst in self.native.items():
+            if symbol in active_symbols:self.cancel_all_orders(inst.id)
         closing_symbols=set(self.gateway._order_symbol.values())
         self.gateway.on_session_close()
         for symbol in closing_symbols:self._sync_account_symbol(symbol)
