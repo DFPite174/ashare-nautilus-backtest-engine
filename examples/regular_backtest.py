@@ -16,6 +16,7 @@ def main():
     p.add_argument('--bars',type=Path,required=True)
     p.add_argument('--rules',type=Path,required=True)
     p.add_argument('--frequency',choices=['DAY','MINUTE'],default='DAY')
+    p.add_argument('--data-mode',choices=['full','session','sparse'],default='full')
     p.add_argument('--volume-multiplier',type=int,default=1)
     p.add_argument('--output',type=Path,required=True)
     args=p.parse_args()
@@ -33,7 +34,7 @@ def main():
         if day==days[0]:return [OrderIntent(b.symbol,'BUY',100)]
         if len(days)>1 and day==days[1]:return [OrderIntent(b.symbol,'SELL',100)]
         return []
-    r=run_backtest(instruments,bars,rules,signal,initial_cash=Decimal(100000),participation_rate=.1,trading_days=days)
+    r=run_backtest(instruments,bars,rules,signal,initial_cash=Decimal(100000),participation_rate=.1,trading_days=days,data_mode=args.data_mode)
     args.output.parent.mkdir(parents=True,exist_ok=True)
     args.output.write_text(json.dumps(r.to_dict(),ensure_ascii=False,indent=2),encoding='utf-8')
     print(f'{len(r.fills)} native fills; {len(r.daily_nav)} reconciled sessions; cash={r.native_cash}; output={args.output}')

@@ -49,10 +49,12 @@
 | `engine/fee_model.py`、`engine/accounting.py` | 费用与公司行为账户处理 |
 | `engine/golden_ledger.py` | 独立参考资金、持仓与权益核算，供日终对账 |
 | `engine/reproducibility.py` | 只读历史快照、输入及运行指纹、策略与环境记录 |
+| `engine/prepared.py`、`engine/snapshots.py` | 同进程不可变准备数据复用、按版本捕获的账户与历史视图 |
+| `engine/replay.py`、`engine/comparison.py` | 事件批次、无价格日边界以及共同契约的业务首差定位 |
 
 NT 原生撮合驱动订单和成交；参考账本依据成交及权益输入独立核算。日终检查原生现金、网关/原生/参考持仓以及含应收权益的 NAV，不一致即终止。这里的独立是核算路径独立；共同输入错误或共同执行假设仍可能同时通过，不能替代券商账单或市场微观结构验证。
 
-当前实现将输入与生成事件放入内存；上游采用列式处理不意味着本项目已有流式或向量化回放。Windows/Python 3.12/NT 1.231.0 的送转桥具有固定 ABI 与指纹约束，细节见 [环境说明](environment.md)。
+输入目前仍是内存对象；默认 `full` 全量装载事件，`session` 逐日流式装载，`sparse` 在日线中保留所有研究行情并减少无待执行意图证券的原生事件。数据流式投递不等于向量化账户内核，详见 [投递契约](data-delivery.md)。Windows/Python 3.12/NT 1.231.0 的送转桥具有固定 ABI 与指纹约束，细节见 [环境说明](environment.md)。
 
 ## 证据与验收
 

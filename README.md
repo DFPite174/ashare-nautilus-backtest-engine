@@ -73,6 +73,22 @@ print(result.to_dict())
 
 组合信号、费用配置、滑点压力测试示例见 [研究使用指南](docs/research-guide.md)。
 
+### 日频重复实验
+
+通过 `prepare_backtest(...)` 固定校验后的输入，再用 `run_prepared_backtest(prepared, portfolio_signal=..., data_mode="sparse")` 运行候选；每轮重新建立账户和订单状态。完整用法见 [准备数据复用](docs/prepared-data.md)。
+
+| `data_mode` | 数据处理方式 |
+| --- | --- |
+| `full`（默认） | 全量装载合成事件，保留原调用行为 |
+| `session` | 按交易日流式装载相同合成事件，支持日线与分钟线 |
+| `sparse` | 仅日线；为已知待执行意图保留完整合成路径，其余证券保留清簿事件和 Bar；全市场信号、历史与估值继续处理 |
+
+模型与时钟边界见 [数据投递模式](docs/data-delivery.md)，共同契约下的首差定位见 [结果比较](docs/result-comparison.md)。
+
+```powershell
+python examples/regular_backtest.py --bars examples/data/bars_daily.csv --rules examples/data/rules.csv --data-mode sparse --output daily-result.json
+```
+
 ### 成交规则速查
 
 - **成交量预算**：每根 Bar 共享 `floor(volume × participation_rate)`，买卖及所有订单共同消耗；申报量另受上一根非零 Bar 已知成交量约束。
@@ -136,11 +152,15 @@ python examples/validate_tushare_lake.py --root "C:\path\to\Tushare_DB" --output
 
 ## 延伸文档
 
+- [分层改造第二批验收](docs/layered-batch2-validation.md)：2.3.0 输入复用、稀疏原型、财务一致性及性能门槛。
 - [分层改造第一批验收](docs/layered-batch1-validation.md)：2.2.0 接口、完整测试、500 股五年三次复测及尚未达到的性能目标。
 
 - [分层架构](docs/architecture.md)：研究、初筛、执行核验与未来实盘的职责。
 - [能力矩阵](docs/capabilities.md)：普通股、基础可转债及证据边界。
 - [账户快照契约](docs/account-contract.md)：可用资金、应收、估值时间与日终核验。
+- [准备数据复用](docs/prepared-data.md)：一次校验、输入指纹及跨轮账户隔离。
+- [数据投递模式](docs/data-delivery.md)：完整、逐日流式与日线稀疏事件路径。
+- [结果比较](docs/result-comparison.md)：相同输入与模型条件下的业务首差。
 - [意图契约](docs/order-intents.md)：字段校验、唯一标识与最早执行时间。
 - [离线调仓适配](docs/rebalance.md)：目标权重到数量计划及费用/成交假设。
 - [研究使用指南](docs/research-guide.md)：组合信号、调仓顺序、成本情景与运行归档。

@@ -1,0 +1,118 @@
+{
+  "all_business_traces_match": true,
+  "input_sha256": "604f7bdabc77693f673ed0372db92d049d660a672e318e35704ba9b0f00e0ac3",
+  "source_sha256": "d1bf7ef47bda9cfa0b0e8b90f53fb304badd11c54c7cd66fce029186be09a1c9",
+  "compared_fields": [
+    "fills",
+    "daily",
+    "final_cash",
+    "final_equity",
+    "positions",
+    "rejections",
+    "company-action event contents"
+  ],
+  "economic_config_fields": [
+    "initial_cash",
+    "participation_rate",
+    "slippage_bps",
+    "execution_policy",
+    "execution_model",
+    "fee_schedules",
+    "symbol_fee_policy"
+  ],
+  "journal_order": "event contents sorted; daily account timing exact",
+  "raw_bars": 605069,
+  "symbols": 500,
+  "sessions": 1212,
+  "requests": 1170,
+  "fills": 1155,
+  "cold_samples": [
+    {
+      "file": "result_batch2_sparse_1.json",
+      "process_seconds": 53.9360336000027,
+      "peak_process_mib": 1277.328125,
+      "bars": 605069,
+      "symbols": 500,
+      "prepared": false,
+      "preparation_seconds": 0,
+      "run_seconds": [
+        46.176440999995975
+      ],
+      "statistics": {
+        "data_mode": "sparse",
+        "market_events": 1214802,
+        "boundary_events": 1212,
+        "peak_batch_events": 1081
+      }
+    },
+    {
+      "file": "result_batch2_sparse_2.json",
+      "process_seconds": 51.252808899997035,
+      "peak_process_mib": 1273.41015625,
+      "bars": 605069,
+      "symbols": 500,
+      "prepared": false,
+      "preparation_seconds": 0,
+      "run_seconds": [
+        43.55248759999813
+      ],
+      "statistics": {
+        "data_mode": "sparse",
+        "market_events": 1214802,
+        "boundary_events": 1212,
+        "peak_batch_events": 1081
+      }
+    },
+    {
+      "file": "result_batch2_sparse_3.json",
+      "process_seconds": 52.302651300000434,
+      "peak_process_mib": 1340.6328125,
+      "bars": 605069,
+      "symbols": 500,
+      "prepared": false,
+      "preparation_seconds": 0,
+      "run_seconds": [
+        44.559568199998466
+      ],
+      "statistics": {
+        "data_mode": "sparse",
+        "market_events": 1214802,
+        "boundary_events": 1212,
+        "peak_batch_events": 1081
+      }
+    }
+  ],
+  "cold_median_seconds": 52.302651300000434,
+  "cold_median_peak_mib": 1277.328125,
+  "prepared_sample": {
+    "file": "result_batch2_prepared_probe.json",
+    "process_seconds": 117.64941040000122,
+    "peak_process_mib": 1903.50390625,
+    "bars": 605069,
+    "symbols": 500,
+    "prepared": true,
+    "preparation_seconds": 19.612218300000677,
+    "run_seconds": [
+      27.699994599999627,
+      29.651229399998556,
+      30.25565650000135
+    ],
+    "statistics": {
+      "data_mode": "sparse",
+      "market_events": 1214802,
+      "boundary_events": 1212,
+      "peak_batch_events": 1081
+    }
+  },
+  "prepared_run_median_seconds": 29.651229399998556,
+  "input_prepare_seconds": 19.612218300000677,
+  "original_full_market_events": 3630414,
+  "workload_limits": [
+    "Current provider snapshot, not strict vintage PIT",
+    "Sparse monthly orders: not representative of every holding/order load",
+    "Same-process prepared experiment retains original raw inputs and earlier result",
+    "Prepared peak includes preparation and all three runs; not a per-run isolated peak",
+    "One overlapping diagnostic sample excluded and rerun",
+    "Old full-delivery baseline not resampled in this batch"
+  ]
+}

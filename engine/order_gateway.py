@@ -20,6 +20,7 @@ A 股前置订单网关与生命周期管理器 (AShare Order Gateway & Lifecycl
 """
 
 from __future__ import annotations
+from collections.abc import Mapping
 import math
 from dataclasses import dataclass
 from datetime import datetime
@@ -221,7 +222,7 @@ class AShareOrderGateway:
         side_str = "buy" if order.side == OrderSide.BUY else "sell"
         qty = Decimal(str(order.quantity.as_double()))
 
-        if not isinstance(rule, dict) or not isinstance(bar, dict):
+        if not isinstance(rule, Mapping) or not isinstance(bar, dict):
             return OrderValidationResult(False, "INVALID_EXECUTION_CONTEXT")
         try:
             trade_date, session_phase = execution_context(order, rule, bar)

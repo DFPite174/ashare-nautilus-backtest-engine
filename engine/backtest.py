@@ -4,14 +4,15 @@ Opening quotes are explicit bar-level liquidity approximations, not an auction o
 queue reconstruction. A closed bar can only create orders for a later bar open.
 """
 from collections import defaultdict
+from collections.abc import Mapping
 from dataclasses import dataclass, field
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 from decimal import Decimal, ROUND_HALF_UP
-from types import MappingProxyType
 from zoneinfo import ZoneInfo
 
 from nautilus_trader.backtest.engine import BacktestEngine, BacktestEngineConfig
 from nautilus_trader.config import LoggingConfig
+from nautilus_trader.cache.config import CacheConfig
 from nautilus_trader.model.currencies import CNY
 from nautilus_trader.model.data import Bar, BarSpecification, BarType, QuoteTick
 from nautilus_trader.model.enums import AccountType, AggregationSource, BarAggregation, BookType, OmsType, OrderSide, PriceType, TimeInForce
@@ -29,6 +30,8 @@ from engine.split_guard import load_bridge
 from engine.liquidity import BarLiquidity, LiquidityModule, synthetic_book
 from engine.reproducibility import HistorySnapshot, build_manifest
 from engine.intents import OrderIntent, validate_intents
+from engine.snapshots import SnapshotMap
+from engine.replay import BOUNDARY_CLIENT, build_events, session_boundary
 
 TZ = ZoneInfo("Asia/Shanghai")
 SIM = Venue("ASHARE")
@@ -84,6 +87,7 @@ class BacktestResult:
     manifest: dict = field(default_factory=dict)
     execution_model: str = "bar-synthetic-l2-v1: bar-derived synthetic L2 with native NT matching; next-bar-open IOC; DAY limits: open price improvement, resting limits at limit; O-H-L-C path; shared bar volume cap; inactive-session pending intents rejected; no observed L2/queue/auction reconstruction"
     schema_version: int = 2
+    run_statistics: dict = field(default_factory=dict)
 
     def to_dict(self):
         from dataclasses import asdict
@@ -125,15 +129,16 @@ def _validate(instruments, bars, rules, actions, initial_cash, rate, trading_day
     first,last=min(bar_days),max(bar_days)
     sessions = sorted(set(trading_days) if trading_days is not None else {d for s,d in rules if s in master and first<=d<=last} | bar_days)
     if not sessions or not bar_days.issubset(sessions):raise ValueError('Bars outside explicit trading calendar')
+    session_set=set(sessions)
     for day in sessions:
         if day.weekday() >= 5: raise ValueError("Invalid exchange session date")
         for symbol, inst in master.items():
             r = rules.get((symbol,day))
             if (inst.list_date and day<inst.list_date) or (inst.delist_date and day>inst.delist_date):
-                if isinstance(r,dict) and r.get('trade_status')=='OPEN':
+                if isinstance(r,Mapping) and r.get('trade_status')=='OPEN':
                     raise ValueError(f'OPEN rule outside security lifecycle: {symbol} {day}')
                 continue
-            if not isinstance(r,dict): raise ValueError(f"Missing daily rule: {symbol} {day}")
+            if not isinstance(r,Mapping): raise ValueError(f"Missing daily rule: {symbol} {day}")
             if r.get('trade_status') not in {'OPEN','SUSPENDED','DAY_BLOCKED'}:
                 raise ValueError(f"Invalid daily rule status: {symbol} {day}")
             for key in ('buy_min','buy_step','sell_min','sell_step','max_order'):
@@ -167,7 +172,7 @@ def _validate(instruments, bars, rules, actions, initial_cash, rate, trading_day
         if r['trade_status']=='OPEN' and r['limit_state']=='BOUNDED' and not D(str(r['down_limit']))<=values[2]<=values[1]<=D(str(r['up_limit'])):
             raise ValueError('OHLC violates daily price band')
     for (symbol,day),r in rules.items():
-        if day in sessions and symbol in master and r['trade_status']=='OPEN' and (symbol,day) not in actual:
+        if day in session_set and symbol in master and r['trade_status']=='OPEN' and (symbol,day) not in actual:
             raise ValueError(f"Missing market bar for open instrument: {symbol} {day}")
     for a in actions:
         if a.symbol not in master or a.cash_div < 0 or a.bonus_ratio < 0 or a.reserve_ratio < 0:
@@ -197,8 +202,13 @@ class _ResearchStrategy(Strategy):
         for b in bars:self.group_sizes[nanos(b.end)]+=1
         self.history=defaultdict(list);self.pending=[];self.last_close={};self.current_day=None;self.closed=set()
         self.valuation_times={};self.seen_intent_ids=set();self.order_intent_ids={}
+        self._state_positions=SnapshotMap();self._state_sellable=SnapshotMap()
+        self._state_history=SnapshotMap();self._state_prices=SnapshotMap();self._state_times=SnapshotMap()
+        self._marked_quantities={};self._market_value=D(0)
+        for symbol in master:self._state_sellable.update(symbol,D(0))
         self.fills=[];self.rejections=[];self.nav=[];self.fee_values={};self.native_receivables={}
-        self.lookup={(str(native[b.symbol].id),nanos(b.end)):b for b in bars}
+        self.lookup=defaultdict(dict)
+        for b in bars:self.lookup[native[b.symbol].id][nanos(b.end)]=b
         self.by_id={str(i.id):s for s,i in native.items()}
         self.by_day=defaultdict(list)
         self.precisions={s: (3 if inst.tick_size < D('.01') else 2) for s, inst in master.items()}
@@ -222,15 +232,16 @@ class _ResearchStrategy(Strategy):
         for ts in sorted({nanos(b.start) for b in self.bars}):
             self.clock.set_time_alert_ns(f'execute_{ts}',ts+2,callback=self._execute_open)
             self.clock.set_time_alert_ns(f'buy_{ts}',ts+3,callback=self._execute_buys)
+        subscribed=set()
         for b in self.bars:
             inst=self.native[b.symbol]
             daily=b.start.astimezone(TZ)==at(b.start.astimezone(TZ).date(),9,30) and b.end.astimezone(TZ)==at(b.end.astimezone(TZ).date(),15)
-            spec=BarSpecification(1,BarAggregation.DAY,PriceType.LAST) if daily else BarSpecification(int((b.end-b.start).total_seconds()/60),BarAggregation.MINUTE,PriceType.LAST)
+            duration='DAY' if daily else int((b.end-b.start).total_seconds()/60)
+            if (b.symbol,duration) in subscribed:continue
+            subscribed.add((b.symbol,duration))
+            spec=BarSpecification(1,BarAggregation.DAY,PriceType.LAST) if daily else BarSpecification(duration,BarAggregation.MINUTE,PriceType.LAST)
             bt=BarType(inst.id,spec,AggregationSource.EXTERNAL)
-            if str(bt) not in getattr(self,'_subscribed',set()):
-                self.subscribe_bars(bt)
-                if not hasattr(self,'_subscribed'):self._subscribed=set()
-                self._subscribed.add(str(bt))
+            self.subscribe_bars(bt)
         for inst in self.native.values():self.subscribe_quote_ticks(inst.id)
         days=set(self.sessions)|{a.ex_date for a in self.actions}|{a.pay_date for a in self.actions if a.pay_date}
         for day in sorted(days):
@@ -249,6 +260,18 @@ class _ResearchStrategy(Strategy):
         row={'symbol':intent.symbol,'reason':reason,'time':timestamp}
         if intent.intent_id is not None:row['intent_id']=intent.intent_id
         self.rejections.append(row)
+
+    def _mark_price(self,symbol,price,timestamp):
+        self._market_value+=self._marked_quantities.get(symbol,D(0))*(price-self.last_close.get(symbol,D(0)))
+        self.last_close[symbol]=price;self.valuation_times[symbol]=timestamp
+        self._state_prices.update(symbol,price);self._state_times.update(symbol,timestamp)
+
+    def _sync_account_symbol(self,symbol):
+        if symbol in self.ledger.positions:
+            quantity=self.ledger.positions[symbol]
+            self._market_value+=(quantity-self._marked_quantities.get(symbol,D(0)))*self.last_close.get(symbol,D(0))
+            self._marked_quantities[symbol]=quantity;self._state_positions.update(symbol,quantity)
+        self._state_sellable.update(symbol,self.gateway.get_sellable_qty(symbol))
 
     def _start_day(self,event):
         day=datetime.fromtimestamp(event.ts_event/1e9,TZ).date()
@@ -283,27 +306,27 @@ class _ResearchStrategy(Strategy):
                 if a.symbol in self.last_close:
                     adjusted=(self.last_close[a.symbol]-a.cash_div)/ratio
                     if adjusted<=0:raise ValueError('Invalid ex-date valuation reference')
-                    self.last_close[a.symbol]=adjusted
-                    self.valuation_times[a.symbol]=datetime.fromtimestamp(event.ts_event/1e9,TZ)
+                    self._mark_price(a.symbol,adjusted,datetime.fromtimestamp(event.ts_event/1e9,TZ))
         self.ledger.process_corporate_actions_for_date(str(day))
         for a in self.pay_actions.get(day, ()):
             if (a.pay_date or a.ex_date)==day and a.cash_div:
                 self.cash_module.pay_dividend(a,str(day));self.native_receivables.pop(action_id(a),None)
+        for symbol in self.ledger.positions:self._sync_account_symbol(symbol)
 
     def _state(self, as_of=None):
         reserved=sum((r['amount'] for r in self.buy_reservations.values()),D(0))
         receivables=sum(self.ledger.receivable_dividends.values(),D(0))
-        nav=self.ledger.cash+receivables+sum((qty*self.last_close[s] for s,qty in self.ledger.positions.items() if qty),D(0))
-        return ResearchState(self.ledger.cash,MappingProxyType(dict(self.ledger.positions)),
-                             MappingProxyType({s:self.gateway.get_sellable_qty(s) for s in self.master}),
-                             MappingProxyType({s:HistorySnapshot(v) for s,v in self.history.items()}),
+        nav=self.ledger.cash+receivables+self._market_value
+        return ResearchState(self.ledger.cash,self._state_positions.snapshot(),
+                             self._state_sellable.snapshot(),self._state_history.snapshot(),
                              as_of,self.ledger.cash-reserved,reserved,receivables,nav,
-                             MappingProxyType(dict(self.last_close)),MappingProxyType(dict(self.valuation_times)))
+                             self._state_prices.snapshot(),self._state_times.snapshot())
 
     def _signal(self,b,update_price=True):
         if update_price:
-            self.last_close[b.symbol]=D(str(b.close));self.valuation_times[b.symbol]=b.end
+            self._mark_price(b.symbol,D(str(b.close)),b.end)
         self.history[b.symbol].append(b)
+        self._state_history.update(b.symbol,HistorySnapshot(self.history[b.symbol]))
         if self.portfolio_signal is not None:
             ts=nanos(b.end);self.closed_groups[ts].append(b)
             if len(self.closed_groups[ts]) < self.group_sizes[ts]:return
@@ -327,7 +350,7 @@ class _ResearchStrategy(Strategy):
         if b not in self.history[b.symbol]:self._signal(b,update_price=self.rules[(b.symbol,day)]['trade_status']=='OPEN')
 
     def on_bar(self,bar):
-        self._signal(self.lookup[(str(bar.bar_type.instrument_id),bar.ts_event)])
+        self._signal(self.lookup[bar.bar_type.instrument_id][bar.ts_event])
 
     def on_quote_tick(self,tick):
         self.open_quotes[str(tick.instrument_id)]=tick
@@ -372,6 +395,7 @@ class _ResearchStrategy(Strategy):
                     self._reject_intent(intent,'INSUFFICIENT_CASH_WITH_FEES',tick.ts_init);continue
             r=self.gateway.validate_and_reserve(order,self.rules[(symbol,day)],{'close':tick.ask_price.as_double(),'volume':max(available,1),'execution_ts':tick.ts_init},tick.ask_price.as_double() if side==OrderSide.BUY else tick.bid_price.as_double())
             if r.is_valid:
+                self._sync_account_symbol(symbol)
                 if side==OrderSide.BUY:self.buy_reservations[str(order.client_order_id)]={'amount':cost,'quantity':D(intent.quantity),'price':D(str(order.price))}
                 if intent.intent_id is not None:self.order_intent_ids[str(order.client_order_id)]=intent.intent_id
                 self.submit_order(order);available-=intent.quantity
@@ -398,12 +422,13 @@ class _ResearchStrategy(Strategy):
         qty=D(str(e.last_qty));px=D(str(e.last_px));fee=D(str(e.commission.as_double()))
         valued_at=datetime.fromtimestamp(e.ts_event/1e9,TZ)
         if symbol not in self.valuation_times or self.valuation_times[symbol]<valued_at:
-            self.last_close[symbol]=px;self.valuation_times[symbol]=valued_at
+            self._mark_price(symbol,px,valued_at)
         key=str(e.client_order_id);before=self.fee_values.get(key,D(0))
         expected=self._expected_fee(e.order_side.name,qty,px,symbol=symbol,day=day,before=before)
         if fee!=expected:raise RuntimeError(f"Native fee mismatch: {fee} != {expected}")
         self.fee_values[key]=before+qty*px
         self.ledger.apply_fill(Fill(fill_id=str(e.trade_id),symbol=symbol,side=LedgerSide(e.order_side.name),quantity=qty,price=px,fee=fee,timestamp=datetime.fromtimestamp(e.ts_event/1e9,TZ)),day)
+        self._sync_account_symbol(symbol)
         if key in self.buy_reservations:
             reserve=self.buy_reservations[key];reserve['quantity']-=qty
             if reserve['quantity']==0:self.buy_reservations.pop(key)
@@ -414,22 +439,28 @@ class _ResearchStrategy(Strategy):
 
     def on_order_canceled(self,e):
         self.gateway.on_order_canceled(str(e.client_order_id));self.buy_reservations.pop(str(e.client_order_id),None)
+        self._sync_account_symbol(self.by_id[str(e.instrument_id)])
     def on_order_expired(self,e):
         self.gateway.on_order_expired(str(e.client_order_id));self.buy_reservations.pop(str(e.client_order_id),None)
+        self._sync_account_symbol(self.by_id[str(e.instrument_id)])
     def on_order_rejected(self,e):
         self.buy_reservations.pop(str(e.client_order_id),None)
         self.gateway.on_order_rejected(str(e.client_order_id));self.rejections.append({'symbol':self.by_id[str(e.instrument_id)],'reason':str(e.reason),'time':e.ts_event})
+        self._sync_account_symbol(self.by_id[str(e.instrument_id)])
         if str(e.client_order_id) in self.order_intent_ids:self.rejections[-1]['intent_id']=self.order_intent_ids[str(e.client_order_id)]
     def on_order_denied(self,e):
         self.buy_reservations.pop(str(e.client_order_id),None)
         self.gateway.on_order_denied(str(e.client_order_id));self.rejections.append({'symbol':self.by_id[str(e.instrument_id)],'reason':str(e.reason),'time':e.ts_event})
+        self._sync_account_symbol(self.by_id[str(e.instrument_id)])
         if str(e.client_order_id) in self.order_intent_ids:self.rejections[-1]['intent_id']=self.order_intent_ids[str(e.client_order_id)]
 
     def _close_day(self,event):
         day=datetime.fromtimestamp(event.ts_event/1e9,TZ).date()
         if day in self.closed:return
         for inst in self.native.values():self.cancel_all_orders(inst.id)
+        closing_symbols=set(self.gateway._order_symbol.values())
         self.gateway.on_session_close()
+        for symbol in closing_symbols:self._sync_account_symbol(symbol)
         for b in self.by_day[day]:
             if (b.volume==0 or self.rules[(b.symbol,day)]['trade_status']!='OPEN') and b not in self.history[b.symbol]:self._inactive_bar(b)
         remaining=[]
@@ -447,6 +478,11 @@ class _ResearchStrategy(Strategy):
         # Also snapshot known non-held symbols, needed for record-day and later split valuation.
         prices.update(self.last_close)
         nav=self.ledger.mark_to_market(str(day),prices)
+        cached_positions=self._state_positions.snapshot();cached_sellable=self._state_sellable.snapshot()
+        if abs(self._market_value-nav.positions_value)>D('.000001') or any(
+                cached_positions.get(s,D(0))!=q or cached_sellable[s]!=self.gateway.get_sellable_qty(s)
+                for s,q in self.ledger.positions.items()):
+            raise RuntimeError(f'Incremental account snapshot mismatch on {day}')
         for a in self.record_actions.get(day, ()):
             if a.record_date==day:self.cash_module.record_entitlement(a,self._native_quantity(a.symbol))
         native_cash=D(str(self.portfolio.account(SIM).balance_total(CNY).as_double()))
@@ -460,13 +496,23 @@ class _ResearchStrategy(Strategy):
         self.nav.append(row);self.closed.add(day)
 
 
-def run_backtest(instruments, bars, rules, signal=None, *, corporate_actions=(), initial_cash=D(100000), participation_rate=.01, trading_days=None, fee_model=None, portfolio_signal=None, slippage_bps=0, strategy_id=None, strategy_params=None, data_snapshot_id=None):
+def _run_backtest(instruments, bars, rules, signal=None, *, corporate_actions=(), initial_cash=D(100000), participation_rate=.01, trading_days=None, fee_model=None, portfolio_signal=None, slippage_bps=0, strategy_id=None, strategy_params=None, data_snapshot_id=None, data_mode='full', _prepared=None):
     """Run one isolated, shared-cash portfolio. Rules keyed by (symbol, local date)."""
-    instruments=list(instruments);bars=list(bars);actions=list(corporate_actions);initial_cash=D(str(initial_cash))
-    master,sessions=_validate(instruments,bars,rules,actions,initial_cash,participation_rate,trading_days)
+    initial_cash=D(str(initial_cash))
+    if _prepared is None:
+        instruments=list(instruments);bars=list(bars);actions=list(corporate_actions)
+        master,sessions=_validate(instruments,bars,rules,actions,initial_cash,participation_rate,trading_days)
+    else:
+        if not initial_cash.is_finite() or initial_cash<=0 or not 0<participation_rate<=1:
+            raise ValueError('Invalid cash or participation_rate')
+        master,sessions=_prepared.master,_prepared.sessions
+        actions=_prepared.actions
     if (signal is None)==(portfolio_signal is None):raise ValueError('Provide exactly one of signal or portfolio_signal')
     slippage_bps=D(str(slippage_bps))
     if not slippage_bps.is_finite() or not 0<=slippage_bps<10000:raise ValueError('Invalid slippage_bps')
+    if data_mode not in {'full','session','sparse'}:raise ValueError('Invalid data_mode')
+    if data_mode=='sparse' and any(b.start.astimezone(TZ)!=at(b.start.astimezone(TZ).date(),9,30) or b.end.astimezone(TZ)!=at(b.end.astimezone(TZ).date(),15) for b in bars):
+        raise ValueError('Sparse delivery requires daily bars')
     cb_symbols = {s for s, i in master.items() if getattr(i, 'asset_class', None) == AssetClass.CONVERTIBLE_BOND or isinstance(i, ConvertibleBondInstrument)}
     cash_module=AShareAccountModule()
     if fee_model is None:
@@ -483,9 +529,11 @@ def run_backtest(instruments, bars, rules, signal=None, *, corporate_actions=(),
     fee.set_scope('isolated_run')
     manifest=build_manifest(instruments,bars,rules,actions,sessions,fee,portfolio_signal or signal,
         initial_cash=initial_cash,participation_rate=participation_rate,slippage_bps=slippage_bps,
-        strategy_id=strategy_id,strategy_params=strategy_params,data_snapshot_id=data_snapshot_id)
+        strategy_id=strategy_id,strategy_params=strategy_params,data_snapshot_id=data_snapshot_id,
+        _input_sha256=_prepared.input_sha256 if _prepared is not None else None,_data_delivery=data_mode)
     liquidity=BarLiquidity(slippage_bps)
-    eng=BacktestEngine(config=BacktestEngineConfig(trader_id=TraderId('RESEARCH-001'),logging=LoggingConfig(log_level='ERROR')))
+    # Complete research history lives in our immutable callback snapshots.
+    eng=BacktestEngine(config=BacktestEngineConfig(trader_id=TraderId('RESEARCH-001'),logging=LoggingConfig(log_level='ERROR'),cache=CacheConfig(bar_capacity=2,tick_capacity=2)))
     try:
         eng.add_venue(venue=SIM,oms_type=OmsType.NETTING,account_type=AccountType.CASH,base_currency=CNY,starting_balances=[Money(float(initial_cash),CNY)],fee_model=fee,fill_model=liquidity,book_type=BookType.L2_MBP,liquidity_consumption=True,modules=[cash_module,LiquidityModule(liquidity)])
         native={}
@@ -494,28 +542,27 @@ def run_backtest(instruments, bars, rules, signal=None, *, corporate_actions=(),
             inc_str = '.001' if prec == 3 else '.01'
             native[symbol]=Equity(instrument_id=InstrumentId(Symbol(symbol),SIM),raw_symbol=Symbol(symbol.split('.')[0]),currency=CNY,price_precision=prec,price_increment=Price.from_str(inc_str),lot_size=Quantity.from_int(i.lot_size),ts_event=nanos(at(sessions[0],0)),ts_init=nanos(at(sessions[0],0)))
             eng.add_instrument(native[symbol])
-        data=[]
-        for b in sorted(bars,key=lambda x:(x.start,x.symbol)):
-            if b.volume==0 or rules[(b.symbol,b.end.astimezone(TZ).date())]['trade_status']!='OPEN':continue
-            inst=native[b.symbol];start,end=nanos(b.start),nanos(b.end)
-            cap=int(D(b.volume)*D(str(participation_rate)))
-            iid=str(inst.id);key=(b.symbol,end)
-            for ts in (start,start+1):liquidity.events[(iid,ts)]=(key,cap,False)
-            for ts in (end-3,end-2,end-1,end):liquidity.events[(iid,ts)]=(key,cap,True)
-            prec = 3 if master[b.symbol].tick_size < D('.01') else 2
-            px_fmt = f".{prec}f"
-            p=Price.from_str(format(b.open,px_fmt))
-            data.append(synthetic_book(inst,p,cap,start))
-            data.append(QuoteTick(inst.id,p,p,Quantity.from_int(cap),Quantity.from_int(cap),start,start+1))
-            for ts,value in zip((end-3,end-2,end-1),(b.high,b.low,b.close)):
-                data.append(synthetic_book(inst,Price.from_str(format(value,px_fmt)),cap,ts))
-            daily=b.start.astimezone(TZ)==at(b.start.astimezone(TZ).date(),9,30) and b.end.astimezone(TZ)==at(b.end.astimezone(TZ).date(),15)
-            spec=BarSpecification(1,BarAggregation.DAY,PriceType.LAST) if daily else BarSpecification(int((b.end-b.start).total_seconds()/60),BarAggregation.MINUTE,PriceType.LAST)
-            data.append(Bar(BarType(inst.id,spec,AggregationSource.EXTERNAL),*[Price.from_str(format(v,px_fmt)) for v in (b.open,b.high,b.low,b.close)],Quantity.from_int(int(D(b.volume)*D(str(participation_rate)))),end,end))
-        if data:eng.add_data(data)
         strategy=_ResearchStrategy(bars,rules,master,sessions,actions,signal,initial_cash,participation_rate,native,fee,cash_module,liquidity,portfolio_signal)
         eng.add_strategy(strategy)
-        eng.run(start=at(sessions[0],0),end=at(sessions[-1],15))
+        bar_types={};statistics=dict(data_mode=data_mode,market_events=0,boundary_events=0,peak_batch_events=0)
+        if data_mode=='full':
+            data=build_events(bars,rules,native,participation_rate,liquidity,bar_types)
+            statistics.update(market_events=len(data),peak_batch_events=len(data))
+            if data:eng.add_data(data)
+            eng.run(start=at(sessions[0],0),end=at(sessions[-1],15))
+        else:
+            for day in sessions:
+                active={i.symbol for eligible,i in strategy.pending if eligible<=nanos(at(day,9,30))} if data_mode=='sparse' else None
+                data=build_events(strategy.by_day[day],rules,native,participation_rate,liquidity,bar_types,active)
+                statistics['market_events']+=len(data)
+                statistics['peak_batch_events']=max(statistics['peak_batch_events'],len(data)+1)
+                if data:eng.add_data(data)
+                eng.add_data([session_boundary(nanos(at(day,15))+1)],client_id=BOUNDARY_CLIENT)
+                statistics['boundary_events']+=1
+                eng.run(start=at(sessions[0],0),end=at(sessions[-1],15)+timedelta(microseconds=1),streaming=True)
+                eng.clear_data()
+                liquidity.events.clear();liquidity.remaining.clear();liquidity.active.clear();liquidity.intrabar.clear()
+            eng.end()
         if len(strategy.nav)!=len(sessions):raise RuntimeError("Missing daily reconciliation")
         native_cash=D(str(eng.portfolio.account(SIM).balance_total(CNY).as_double()))
         orders=[{'id':str(o.client_order_id),'status':o.status.name,'quantity':str(o.quantity),'filled_quantity':str(o.filled_qty),
@@ -523,10 +570,29 @@ def run_backtest(instruments, bars, rules, signal=None, *, corporate_actions=(),
         pending=[{'symbol':i.symbol,'side':i.side,'quantity':i.quantity,'reason':'END_OF_DATA',
                   **({'intent_id':i.intent_id} if i.intent_id is not None else {}),
                   **({'earliest_execution':i.earliest_execution.isoformat()} if i.earliest_execution else {})} for _,i in strategy.pending]
-        return BacktestResult(native_cash,strategy.ledger.cash,{s:strategy.ledger.positions.get(s,D(0)) for s in master},strategy.fills,strategy.rejections,strategy.nav,list(cash_module.journal),orders,pending,manifest)
+        result=BacktestResult(native_cash,strategy.ledger.cash,{s:strategy.ledger.positions.get(s,D(0)) for s in master},strategy.fills,strategy.rejections,strategy.nav,list(cash_module.journal),orders,pending,manifest)
+        result.run_statistics=statistics
+        return result
     finally:
         try:
             # Kernel disposal stops other engines, but not a still-running trader.
             # Do not end() a failed run: it flushes future timers and callbacks.
             if eng.trader.is_running:eng.trader.stop()
         finally:eng.dispose()
+
+
+def run_backtest(instruments, bars, rules, signal=None, *, corporate_actions=(), initial_cash=D(100000), participation_rate=.01, trading_days=None, fee_model=None, portfolio_signal=None, slippage_bps=0, strategy_id=None, strategy_params=None, data_snapshot_id=None, data_mode='full'):
+    """Validate raw inputs and run one isolated shared-cash portfolio."""
+    return _run_backtest(instruments,bars,rules,signal,corporate_actions=corporate_actions,
+        initial_cash=initial_cash,participation_rate=participation_rate,trading_days=trading_days,
+        fee_model=fee_model,portfolio_signal=portfolio_signal,slippage_bps=slippage_bps,
+        strategy_id=strategy_id,strategy_params=strategy_params,data_snapshot_id=data_snapshot_id,data_mode=data_mode)
+
+
+def run_prepared_backtest(prepared, signal=None, **run_options):
+    """Reuse validated market inputs, always constructing fresh runtime accounts."""
+    from engine.prepared import PreparedBacktest
+    if type(prepared) is not PreparedBacktest:raise TypeError('PreparedBacktest required')
+    prepared.assert_compatible()
+    return _run_backtest(prepared.instruments,prepared.bars,prepared.rules,signal,
+        corporate_actions=prepared.actions,trading_days=prepared.sessions,_prepared=prepared,**run_options)
