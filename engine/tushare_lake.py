@@ -1,5 +1,6 @@
 """Read-only adapter for the Tushare Parquet lake layout; no network or secrets."""
 from dataclasses import dataclass
+from collections import namedtuple
 from datetime import datetime, timedelta
 from decimal import Decimal
 import hashlib
@@ -9,6 +10,19 @@ import pyarrow.dataset as ds
 from contracts import Instrument, Venue, CorporateAction
 from engine.backtest import BacktestBar, at
 from engine.reproducibility import digest
+
+_DailyRow = namedtuple('_DailyRow', 'ts_code trade_date open high low close vol volume_shares')
+_BandRow = namedtuple('_BandRow', 'ts_code trade_date up_limit down_limit')
+_SuspensionRow = namedtuple('_SuspensionRow', 'ts_code trade_date suspend_type suspend_timing', defaults=[None])
+
+
+def _market_rows(dataset, row_type, filter):
+    columns = list(row_type._fields)
+    if row_type is _SuspensionRow and 'suspend_timing' not in dataset.schema.names:
+        columns.remove('suspend_timing')
+    for batch in dataset.to_batches(columns=columns, filter=filter, batch_size=8192):
+        values = batch.to_pydict()
+        yield from (row_type(*row) for row in zip(*(values[name] for name in columns)))
 
 
 def parse_day(value):
@@ -36,7 +50,7 @@ def load_tushare_lake(root, symbols, start, end):
     if not symbols or start>end or any(not s.endswith(('.SH','.SZ')) for s in symbols):
         raise ValueError('Explicit Shanghai/Shenzhen stock symbols and valid dates required')
     used={}
-    def read(pattern, filter=None):
+    def read(pattern, filter=None, row_type=None):
         paths=sorted(base.glob(pattern))
         if not paths:raise FileNotFoundError(f'Missing lake table: {pattern}')
         for p in paths:
@@ -44,7 +58,9 @@ def load_tushare_lake(root, symbols, start, end):
             with p.open('rb') as f:
                 for chunk in iter(lambda:f.read(1024*1024),b''):h.update(chunk)
             used[p.relative_to(root).as_posix()]=h.hexdigest()
-        return ds.dataset([str(p) for p in paths],format='parquet').to_table(filter=filter).to_pylist()
+        dataset=ds.dataset([str(p) for p in paths],format='parquet')
+        return (_market_rows(dataset,row_type,filter) if row_type is not None
+                else dataset.to_table(filter=filter).to_pylist())
     codes=ds.field('ts_code').isin(symbols)
     span=(ds.field('trade_date')>=start.strftime('%Y%m%d')) & (ds.field('trade_date')<=end.strftime('%Y%m%d'))
     master=read('meta/stock_basic.parquet',codes)
@@ -65,31 +81,35 @@ def load_tushare_lake(root, symbols, start, end):
     if set(official)!=expected:raise ValueError('Missing exchange calendar dates')
     sessions=sorted(day for day,is_open in official.items() if is_open)
     if not sessions:raise ValueError('Missing exchange calendar sessions')
-    rows,limits,suspensions=[],[],[]
-    for year in range(start.year,end.year+1):
-        rows+=read(f'market/daily/year={year}/*.parquet',codes & span)
-        limits+=read(f'market/stk_limit/year={year}/*.parquet',codes & span)
-        suspensions+=read(f'market/suspend_d/year={year}/*.parquet',codes & span)
+    market_days={day.strftime('%Y%m%d'):day for day in official}
+    def row_day(row):
+        day=market_days.get(row.trade_date)
+        return day if day is not None else parse_day(row.trade_date)
+    def yearly(table,row_type):
+        for year in range(start.year,end.year+1):
+            yield from read(f'market/{table}/year={year}/*.parquet',codes & span,row_type)
     def unique(data,label):
         out={}
         for row in data:
-            key=row['ts_code'],parse_day(row['trade_date'])
+            key=row.ts_code,row_day(row)
             if key in out:raise ValueError(f'Duplicate {label}: {key}')
             out[key]=row
         return out
-    daily=unique(rows,'bar');bands=unique(limits,'price band')
-    if any(day not in sessions for _,day in daily):raise ValueError('Market bar outside official calendar sessions')
+    daily=unique(yearly('daily',_DailyRow),'bar');bands=unique(yearly('stk_limit',_BandRow),'price band')
+    session_set=set(sessions)
+    if any(day not in session_set for _,day in daily):raise ValueError('Market bar outside official calendar sessions')
     halted={}
-    for r in suspensions:
-        if r['suspend_type']=='S':
-            key=r['ts_code'],parse_day(r['trade_date'])
+    for r in yearly('suspend_d',_SuspensionRow):
+        if r.suspend_type=='S':
+            key=r.ts_code,row_day(r)
             # Intraday suspension is explicitly blocked for this daily adapter.
-            halted[key]='DAY_BLOCKED' if r.get('suspend_timing') else 'SUSPENDED'
+            halted[key]='DAY_BLOCKED' if r.suspend_timing else 'SUSPENDED'
     bars=[];rules={}
+    boundaries={day:(at(day,9,30),at(day,15)) for day in sessions}
     for inst in instruments:
         for day in sessions:
             if inst.list_date and day<inst.list_date:continue
-            key=inst.symbol,day;r=daily.get(key);band=bands.get(key)
+            key=inst.symbol,day;r=daily.pop(key,None);band=bands.pop(key,None)
             status=halted.get(key,'OPEN')
             if r is None and status=='OPEN':raise ValueError(f'Missing OPEN bar: {key}')
             if band is None and status=='OPEN':raise ValueError(f'Missing official price band: {key}; unlimited sessions require explicit rules')
@@ -97,14 +117,15 @@ def load_tushare_lake(root, symbols, start, end):
                 buy_min=inst.min_order_qty,buy_step=1 if inst.symbol.startswith('688') else 100,
                 sell_min=200 if inst.symbol.startswith('688') else 100,sell_step=1 if inst.symbol.startswith('688') else 100,
                 max_order=100000 if inst.symbol.startswith('688') else 1000000)
-            if band:rules[key].update(up_limit=band['up_limit'],down_limit=band['down_limit'])
+            if band:rules[key].update(up_limit=band.up_limit,down_limit=band.down_limit)
             if r is not None:
-                vol=Decimal(str(r['volume_shares']))
-                source_vol=Decimal(str(r['vol']))*100
+                vol=Decimal(str(r.volume_shares))
+                source_vol=Decimal(str(r.vol))*100
                 if not vol.is_finite() or vol<0 or vol!=vol.to_integral_value() or abs(vol-source_vol)>Decimal('.01'):
                     raise ValueError(f'Invalid or inconsistent share volume: {key}')
-                bars.append(BacktestBar(inst.symbol,at(day,9,30),at(day,15),
-                    *[Decimal(str(r[k])) for k in ('open','high','low','close')],int(vol)))
+                bars.append(BacktestBar(inst.symbol,*boundaries[day],
+                    *[Decimal(str(getattr(r,k))) for k in ('open','high','low','close')],int(vol)))
+    del daily,bands
     # Include events already ex-dividend but paid/listed during the sample so they
     # cannot silently enter without the record-date and holding state required.
     action_rows=read('actions/dividend.parquet',codes)

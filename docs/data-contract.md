@@ -48,3 +48,4 @@ CSV 读取：`load_bars_csv(path, frequency="DAY", volume_multiplier=1)`。Tusha
 - `dividend.cash_div_tax` 映射为税前每股红利，`stk_bo_rate/stk_co_rate` 映射为送股/转增；实施公告日期用于事件标识。只接收 `div_proc="实施"`；相同条款去重，冲突失败。
 - 主档用于明确证券的上市日期检查，不用于从当前成分构造历史股票池；没有可靠的最后交易日时不推断退市状态。
 - 每个读取文件的 SHA-256 写入 `snapshot`；内容哈希不构成历史版本 PIT 证明。
+- 市场表按所需列分批扫描，临时行采用紧凑元组，转换后释放索引；最终仍返回完整 Python Bar 列表和规则字典。源文件指纹覆盖整个文件，分批不会跳过跨批重复与缺口检查。测量口径见[湖输入内存验收](lake-memory-validation.md)。

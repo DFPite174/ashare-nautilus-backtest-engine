@@ -94,3 +94,64 @@ def test_dividend_proposal_is_not_an_implemented_distribution(tmp_path):
     data=load_tushare_lake(tmp_path,['600000.SH'],'2025-05-06','2025-05-08')
     assert not data.corporate_actions
     assert data.snapshot['excluded_unimplemented_actions']==1
+
+
+def test_market_tables_are_projected_and_processed_in_batches(tmp_path, monkeypatch):
+    import engine.tushare_lake as module
+    lake(tmp_path)
+    original = module.ds.dataset
+    scans = []
+    class Dataset:
+        def __init__(self, paths, **kwargs):
+            self.value = original(paths, **kwargs)
+            self.market = any('/market/' in str(path).replace('\\', '/') for path in paths)
+        def to_table(self, **kwargs):
+            assert not self.market, 'Market input must not materialize all dictionary rows'
+            return self.value.to_table(**kwargs)
+        def to_batches(self, **kwargs):
+            scans.append(tuple(kwargs['columns']))
+            assert 0 < kwargs['batch_size'] <= 8192
+            return self.value.to_batches(**{**kwargs, 'batch_size': 1})
+        @property
+        def schema(self):
+            return self.value.schema
+    monkeypatch.setattr(module.ds, 'dataset', Dataset)
+    data = module.load_tushare_lake(tmp_path, ['600000.SH'], '2025-05-06', '2025-05-08')
+    assert len(data.bars) == 3 and len(data.rules) == 3
+    assert len(scans) == 3
+    assert all('ts_code' in columns and 'trade_date' in columns for columns in scans)
+    assert data.bars[0].volume == 10000
+
+
+@pytest.mark.parametrize('table', ['daily', 'stk_limit'])
+def test_duplicate_market_row_is_rejected_across_input_batches(tmp_path, table):
+    from engine.tushare_lake import load_tushare_lake
+    lake(tmp_path)
+    path = tmp_path / f'lake/market/{table}/year=2025/{table}_2025.parquet'
+    rows = pq.ParquetFile(path).read().to_pylist()
+    rows.append(dict(rows[0]))
+    pq.write_table(pa.Table.from_pylist(rows), path, row_group_size=1)
+    with pytest.raises(ValueError, match='Duplicate'):
+        load_tushare_lake(tmp_path, ['600000.SH'], '2025-05-06', '2025-05-08')
+
+
+def test_suspension_timing_column_remains_optional(tmp_path):
+    from engine.tushare_lake import load_tushare_lake
+    lake(tmp_path, missing_bar=True, suspended=True)
+    path = tmp_path / 'lake/market/suspend_d/year=2025/suspend_d_2025.parquet'
+    pq.write_table(pq.ParquetFile(path).read().drop(['suspend_timing']), path)
+    data = load_tushare_lake(tmp_path, ['600000.SH'], '2025-05-06', '2025-05-08')
+    assert len(data.bars) == 2
+    assert data.rules['600000.SH', data.trading_days[1]]['trade_status'] == 'SUSPENDED'
+
+
+@pytest.mark.parametrize('shares', [10001, -100, 10000.5])
+def test_batched_reader_preserves_volume_consistency_checks(tmp_path, shares):
+    from engine.tushare_lake import load_tushare_lake
+    lake(tmp_path)
+    path = tmp_path / 'lake/market/daily/year=2025/daily_2025.parquet'
+    rows = pq.ParquetFile(path).read().to_pylist()
+    rows[0]['volume_shares'] = shares
+    pq.write_table(pa.Table.from_pylist(rows), path, row_group_size=1)
+    with pytest.raises(ValueError, match='share volume'):
+        load_tushare_lake(tmp_path, ['600000.SH'], '2025-05-06', '2025-05-08')
