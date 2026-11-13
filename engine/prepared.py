@@ -11,6 +11,7 @@ from zoneinfo import ZoneInfo
 from collections import defaultdict
 
 from engine.reproducibility import digest
+from engine.frozen_rules import freeze_rules
 
 
 @lru_cache(maxsize=8)
@@ -71,15 +72,17 @@ def prepare_backtest(instruments, bars, rules, *, corporate_actions=(), trading_
     for b in bars:
         for value in (b.symbol, b.start, b.end, b.open, b.high, b.low, b.close, b.volume):
             _freeze(value)
-    frozen_rules = _freeze(rules)
+    frozen_rules = freeze_rules(rules,_freeze)
     if trading_days is not None:
         trading_days = tuple(_freeze(day) for day in trading_days)
     master, sessions = _validate(instruments, bars, frozen_rules, actions, Decimal(1), 1, trading_days)
     sessions = tuple(sessions)
     by_day=defaultdict(list);daily_only=True
+    daily_bounds={day:(at(day,9,30),at(day,15)) for day in sessions}
     for bar in bars:
         day=bar.end.astimezone(TZ).date();by_day[day].append(bar)
-        if bar.start!=at(day,9,30) or bar.end!=at(day,15):daily_only=False
+        opening,closing=daily_bounds[day]
+        if bar.start!=opening or bar.end!=closing:daily_only=False
     bars_by_day=MappingProxyType({day:tuple(by_day[day]) for day in sessions})
     input_sha256 = digest({'instruments': sorted(instruments, key=lambda i: i.symbol),
         'bars': sorted(bars, key=lambda b: (b.start, b.symbol)), 'rules': frozen_rules,

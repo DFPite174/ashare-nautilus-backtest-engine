@@ -3,6 +3,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import fields, is_dataclass
 from datetime import date, datetime, timezone
 from decimal import Decimal
+from functools import lru_cache
 import hashlib
 import importlib.metadata
 import inspect
@@ -10,6 +11,7 @@ import json
 import platform
 import subprocess
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 
 class HistorySnapshot(Sequence):
@@ -30,13 +32,29 @@ class HistorySnapshot(Sequence):
         return self.__bars[index]
 
 
+@lru_cache(maxsize=64)
+def _field_names(cls):
+    return tuple(f.name for f in fields(cls))
+
+
+@lru_cache(maxsize=128)
+def _utc_isoformat(value, fold):
+    # Same-zone datetime equality ignores fold; retain it separately in the cache key.
+    return value.astimezone(timezone.utc).isoformat()
+
+
 def canonical(value):
     if hasattr(value, 'model_dump'): return canonical(value.model_dump(mode='json'))
-    if is_dataclass(value): return {f.name: canonical(getattr(value, f.name)) for f in fields(value)}
+    if is_dataclass(value):
+        names = (f.name for f in fields(value)) if isinstance(value, type) else _field_names(type(value))
+        return {name: canonical(getattr(value, name)) for name in names}
     if isinstance(value, Mapping): return {str(k): canonical(v) for k, v in sorted(value.items(), key=lambda item: str(item[0]))}
     if isinstance(value, (tuple, list)): return [canonical(v) for v in value]
     if isinstance(value, Decimal): return format(value.normalize(), 'f')
-    if isinstance(value, datetime): return value.astimezone(timezone.utc).isoformat()
+    if isinstance(value, datetime):
+        if type(value) is datetime and type(value.tzinfo) in (timezone, ZoneInfo):
+            return _utc_isoformat(value, value.fold)
+        return value.astimezone(timezone.utc).isoformat()
     if isinstance(value, date): return value.isoformat()
     return value
 
@@ -47,10 +65,13 @@ def digest(value):
     def write(item, depth=0):
         # Stream collection rows; C JSON encoding handles each bounded row.
         if depth < 2 and isinstance(item, Mapping):
-            normalized = {str(k): v for k, v in sorted(item.items(), key=lambda pair: str(pair[0]))}
+            pairs = sorted(((str(k), v) for k, v in item.items()), key=lambda pair: pair[0])
             result.update(b'{')
-            for n, (key, child) in enumerate(sorted(normalized.items())):
-                if n: result.update(b',')
+            first = True
+            for n, (key, child) in enumerate(pairs):
+                if n + 1 < len(pairs) and pairs[n + 1][0] == key: continue
+                if not first: result.update(b',')
+                first = False
                 result.update(encoder.encode(key).encode('utf-8'));result.update(b':')
                 write(child, depth+1)
             result.update(b'}')

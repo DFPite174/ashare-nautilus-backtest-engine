@@ -115,6 +115,7 @@ def _validate(instruments, bars, rules, actions, initial_cash, rate, trading_day
         if i.list_date and i.delist_date and i.list_date>i.delist_date:
             raise ValueError(f'Invalid security lifecycle: {i.symbol}')
     # Validate before astimezone or sorting can assume a timezone implicitly.
+    bar_days=set()
     for b in bars:
         if b.symbol not in master:
             raise ValueError(f'Unknown bar symbol: {b.symbol}')
@@ -123,9 +124,9 @@ def _validate(instruments, bars, rules, actions, initial_cash, rate, trading_day
             if not isinstance(value,datetime) or value.tzinfo is None or value.utcoffset() is None:
                 raise ValueError(f'Explicit timezone required: {b.symbol} {field}')
         inst=master[b.symbol];day=b.end.astimezone(TZ).date()
+        bar_days.add(day)
         if (inst.list_date and day<inst.list_date) or (inst.delist_date and day>inst.delist_date):
             raise ValueError(f'Bar outside security lifecycle: {b.symbol} {day}')
-    bar_days={b.end.astimezone(TZ).date() for b in bars}
     first,last=min(bar_days),max(bar_days)
     sessions = sorted(set(trading_days) if trading_days is not None else {d for s,d in rules if s in master and first<=d<=last} | bar_days)
     if not sessions or not bar_days.issubset(sessions):raise ValueError('Bars outside explicit trading calendar')
@@ -150,25 +151,29 @@ def _validate(instruments, bars, rules, actions, initial_cash, rate, trading_day
                     raise ValueError("Invalid price band rule")
             elif r.get('limit_state')!='UNBOUNDED' and r.get('trade_status')=='OPEN':
                 raise ValueError("Missing executable price band rule")
+    bounds={day:(at(day,9,30),at(day,11,30),at(day,13),at(day,15)) for day in sessions}
     previous={}; actual=set()
     for b in sorted(bars,key=lambda x:(x.start,x.symbol)):
         start,end=b.start.astimezone(TZ),b.end.astimezone(TZ)
-        if start.date()!=end.date() or not at(start.date(),9,30)<=start<end<=at(start.date(),15):
+        day=start.date();end_day=end.date()
+        if day!=end_day:
             raise ValueError("Bar is outside the supported session")
-        daily=start==at(start.date(),9,30) and end==at(start.date(),15)
-        if not daily and not (end<=at(start.date(),11,30) or start>=at(start.date(),13)):
+        opening,morning_end,afternoon_start,closing=bounds[day]
+        if not opening<=start<end<=closing:raise ValueError('Bar is outside the supported session')
+        daily=start==opening and end==closing
+        if not daily and not (end<=morning_end or start>=afternoon_start):
             raise ValueError("Intraday bar crosses the lunch break")
         if not daily and (end-start).total_seconds()%60:
             raise ValueError("Only daily or whole-minute bars are supported")
         if b.symbol in previous and start<previous[b.symbol]: raise ValueError("Overlapping bars")
-        previous[b.symbol]=end; actual.add((b.symbol,end.date()))
+        previous[b.symbol]=end; actual.add((b.symbol,end_day))
         values=[D(str(v)) for v in (b.open,b.high,b.low,b.close)]
         if any(not v.is_finite() or v<=0 for v in values) or not values[2]<=min(values[0],values[3])<=max(values[0],values[3])<=values[1]:
             raise ValueError("Invalid OHLC")
         tick=master[b.symbol].tick_size
         if any(v%tick for v in values): raise ValueError("OHLC violates price tick")
         if not isinstance(b.volume,int) or b.volume<0: raise ValueError("Invalid share volume")
-        r=rules[(b.symbol,end.date())]
+        r=rules[(b.symbol,end_day)]
         if r['trade_status']=='OPEN' and r['limit_state']=='BOUNDED' and not D(str(r['down_limit']))<=values[2]<=values[1]<=D(str(r['up_limit'])):
             raise ValueError('OHLC violates daily price band')
     for (symbol,day),r in rules.items():
