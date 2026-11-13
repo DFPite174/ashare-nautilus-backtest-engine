@@ -158,6 +158,7 @@ python examples/validate_tushare_lake.py --root "C:\path\to\Tushare_DB" --output
 
 ## 延伸文档
 
+- [必要优化验收](docs/essential-validation.md)：2.5.1 摘要标量路径、332 项测试及宽持仓密集订单回归。
 - [数据准备优化验收](docs/preparation-validation.md)：2.5.0 共享规则结构、日期与摘要优化、327 项测试及相同输入复测。
 - [冻结订单专用回放验收](docs/order-tape-validation.md)：2.4.0 固定指令回放、315 项测试、计时边界及未达到的准备/内存门槛。
 - [分层改造第二批验收](docs/layered-batch2-validation.md)：2.3.0 输入复用、稀疏原型、财务一致性及性能门槛。

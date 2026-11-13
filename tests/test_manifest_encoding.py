@@ -94,3 +94,36 @@ def test_datetime_cache_distinguishes_dst_folds():
     assert canonical(early) == '2025-11-02T05:30:00+00:00'
     assert canonical(late) == '2025-11-02T06:30:00+00:00'
     assert_legacy_hash([early, late, early, late])
+
+
+def test_exact_json_scalars_skip_composite_dispatch(monkeypatch):
+    import engine.reproducibility as module
+    def unexpected(value):
+        raise AssertionError('JSON scalar entered composite dispatch')
+    monkeypatch.setattr(module, 'is_dataclass', unexpected)
+    for value in ('中文', 2 ** 100, -0.0, True, None):
+        assert module.canonical(value) is value
+    assert module.canonical(Decimal('1.200')) == '1.2'
+
+
+def test_decimal_canonicalization_respects_current_context():
+    from decimal import localcontext
+    value = Decimal('1.23456789')
+    with localcontext() as ctx:
+        ctx.prec = 4
+        assert canonical(value) == '1.235'
+    with localcontext() as ctx:
+        ctx.prec = 8
+        assert canonical(value) == '1.2345679'
+
+
+def test_scalar_subclass_keeps_model_dump_precedence_and_nonfinite_rejection():
+    import pytest
+    class ModelInt(int):
+        def model_dump(self, mode):
+            return {'value': int(self)}
+    assert canonical(ModelInt(7)) == {'value': 7}
+    assert_legacy_hash({'rows': [ModelInt(7), Decimal('-0.00'), -0.0]})
+    for value in (float('nan'), float('inf'), -float('inf')):
+        with pytest.raises(ValueError):
+            digest({'value': value})

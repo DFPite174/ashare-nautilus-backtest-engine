@@ -13,6 +13,7 @@ import subprocess
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+_JSON_SCALARS = (str, int, float, bool, type(None))
 
 class HistorySnapshot(Sequence):
     """A captured prefix of an append-only list; never exposes later bars."""
@@ -44,6 +45,8 @@ def _utc_isoformat(value, fold):
 
 
 def canonical(value):
+    if type(value) in _JSON_SCALARS: return value
+    if type(value) is Decimal: return format(value.normalize(), 'f')
     if hasattr(value, 'model_dump'): return canonical(value.model_dump(mode='json'))
     if is_dataclass(value):
         names = (f.name for f in fields(value)) if isinstance(value, type) else _field_names(type(value))

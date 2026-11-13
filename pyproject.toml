@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ashare-nautilus-backtest-engine"
-version = "2.5.0"
+version = "2.5.1"
 description = "A-share execution replay and independent account validation on NautilusTrader"
 readme = "README.md"
 authors = [{ name = "Changlong Xie" }]

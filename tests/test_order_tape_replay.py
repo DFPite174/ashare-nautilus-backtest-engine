@@ -7,6 +7,34 @@ from engine import OrderIntent, compare_backtests, prepare_backtest, run_prepare
 from test_research_hardening import market
 
 
+@pytest.mark.parametrize('volume', [10000, 150])
+def test_wide_dense_tape_matches_full_callback_execution(volume):
+    from engine import TimedOrderIntent, prepare_order_tape, run_order_tape
+    symbols = tuple(f'600{n:03d}.SH' for n in range(32))
+    bars, rules = market(symbols, days=16)
+    bars = [replace(bar, volume=volume) for bar in bars if bar.end.weekday() < 5]
+    rules = {key: row for key, row in rules.items() if key[1].weekday() < 5}
+    prepared = prepare_backtest([Instrument(symbol=s, exchange=Venue.SSE) for s in symbols], bars, rules)
+    times = sorted({bar.end for bar in bars})[:-1]
+    entries = [TimedOrderIntent(timestamp, OrderIntent(symbol, 'BUY' if day % 2 == 0 else 'SELL',
+                    100, D(10), intent_id=f'{day}:{symbol}:{part}'))
+               for day, timestamp in enumerate(times) for symbol in symbols for part in range(3)]
+    by_time = {}
+    for entry in entries:
+        by_time.setdefault(entry.decision_time, []).append(entry.intent)
+    options = dict(initial_cash=D(1000000), participation_rate=1)
+    reference = run_prepared_backtest(prepared,
+        portfolio_signal=lambda closed, state: by_time.get(closed[0].end, ()), **options)
+    result = run_order_tape(prepared, prepare_order_tape(prepared, entries), **options)
+    assert compare_backtests(reference, result)['equal_within_compared_fields']
+    assert reference.orders == result.orders
+    assert reference.pending_intents == result.pending_intents
+    assert len(result.daily_nav) == 12
+    assert max(sum(D(quantity) > 0 for quantity in row['holdings'].values())
+               for row in result.daily_nav) == len(symbols)
+    assert result.run_statistics['scheduled_intents'] == 1056
+
+
 @pytest.mark.parametrize('kind',['idle','roundtrip','partial','halt','future','cross-symbol'])
 def test_frozen_tape_matches_callback_account_and_fills(kind):
     from engine import TimedOrderIntent,prepare_order_tape,run_order_tape
