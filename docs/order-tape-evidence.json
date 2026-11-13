@@ -1,0 +1,138 @@
+{
+  "all_business_traces_match": true,
+  "market_input_sha256": "604f7bdabc77693f673ed0372db92d049d660a672e318e35704ba9b0f00e0ac3",
+  "order_tape_sha256": "090d30f223c139cbcda4dc583e50852ea3ba369a0eeb6af8a965f08d6ddf803a",
+  "source_sha256": "ef7f48f680faffdad7f9ed3142fa3a23df035225b74ef32a0f13e8d2d98f8d37",
+  "compared_fields": [
+    "fills",
+    "daily",
+    "final_cash",
+    "final_equity",
+    "positions",
+    "rejections",
+    "company-action complete event contents"
+  ],
+  "same_economic_config_fields": [
+    "initial_cash",
+    "participation_rate",
+    "slippage_bps",
+    "execution_policy",
+    "execution_model",
+    "fee_schedules",
+    "symbol_fee_policy"
+  ],
+  "journal_order": "sorted complete events, daily account chronology compared exactly",
+  "symbols": 500,
+  "raw_bars": 605069,
+  "sessions": 1212,
+  "requests": 1170,
+  "fills": 1155,
+  "cold_samples": [
+    {
+      "label": "cold1",
+      "file": "result_order_tape_final_cold1.json",
+      "process_seconds": 36.706470800003444,
+      "peak_process_mib": 1469.6484375,
+      "name": "large",
+      "market_preparation_seconds": 20.41345849999925,
+      "tape_preparation_seconds": 0.01393860000098357,
+      "replay_seconds": [
+        8.498580100000254
+      ],
+      "statistics": {
+        "data_mode": "orders",
+        "market_events": 41632,
+        "boundary_events": 1212,
+        "peak_batch_events": 139,
+        "native_market_bars": 18484,
+        "input_bars": 605069,
+        "scheduled_intents": 1170
+      },
+      "order_tape_sha256": "090d30f223c139cbcda4dc583e50852ea3ba369a0eeb6af8a965f08d6ddf803a"
+    },
+    {
+      "label": "cold2",
+      "file": "result_order_tape_final_cold2.json",
+      "process_seconds": 36.37938820000272,
+      "peak_process_mib": 1543.07421875,
+      "name": "large",
+      "market_preparation_seconds": 20.074814100000367,
+      "tape_preparation_seconds": 0.013046700005361345,
+      "replay_seconds": [
+        8.406607000004442
+      ],
+      "statistics": {
+        "data_mode": "orders",
+        "market_events": 41632,
+        "boundary_events": 1212,
+        "peak_batch_events": 139,
+        "native_market_bars": 18484,
+        "input_bars": 605069,
+        "scheduled_intents": 1170
+      },
+      "order_tape_sha256": "090d30f223c139cbcda4dc583e50852ea3ba369a0eeb6af8a965f08d6ddf803a"
+    },
+    {
+      "label": "cold3",
+      "file": "result_order_tape_final_cold3.json",
+      "process_seconds": 36.25252869999531,
+      "peak_process_mib": 1469.25390625,
+      "name": "large",
+      "market_preparation_seconds": 19.817969900002936,
+      "tape_preparation_seconds": 0.012192800000775605,
+      "replay_seconds": [
+        8.449245299998438
+      ],
+      "statistics": {
+        "data_mode": "orders",
+        "market_events": 41632,
+        "boundary_events": 1212,
+        "peak_batch_events": 139,
+        "native_market_bars": 18484,
+        "input_bars": 605069,
+        "scheduled_intents": 1170
+      },
+      "order_tape_sha256": "090d30f223c139cbcda4dc583e50852ea3ba369a0eeb6af8a965f08d6ddf803a"
+    }
+  ],
+  "cold_median_seconds": 36.37938820000272,
+  "cold_median_peak_mib": 1469.6484375,
+  "cold_median_market_preparation_seconds": 20.074814100000367,
+  "warm_sample": {
+    "label": "warm",
+    "file": "result_order_tape_final_warm.json",
+    "process_seconds": 55.153839500002505,
+    "peak_process_mib": 1866.5078125,
+    "name": "large",
+    "market_preparation_seconds": 20.14646700000594,
+    "tape_preparation_seconds": 0.012532100001408253,
+    "replay_seconds": [
+      8.112376899996889,
+      8.645715500002552,
+      8.411482499999693
+    ],
+    "statistics": {
+      "data_mode": "orders",
+      "market_events": 41632,
+      "boundary_events": 1212,
+      "peak_batch_events": 139,
+      "native_market_bars": 18484,
+      "input_bars": 605069,
+      "scheduled_intents": 1170
+    },
+    "order_tape_sha256": "090d30f223c139cbcda4dc583e50852ea3ba369a0eeb6af8a965f08d6ddf803a"
+  },
+  "warm_replay_median_seconds": 8.411482499999693,
+  "warm_replay_target_passed": true,
+  "cold_process_target_passed": false,
+  "cold_memory_target_passed": false,
+  "workload_limits": [
+    "Frozen orders are provided by upstream, no factor/strategy research performed here",
+    "Full input is checked and hashed; only held/eligible execution symbols sent to NT",
+    "Raw input and prepared snapshot coexist in this benchmark, raising preparation peak",
+    "New process is not cold OS cache; old delivery timings not resampled",
+    "Current provider data is not strict vintage PIT; no live or real-L2 proof"
+  ],
+  "source_tests": 315,
+  "installed_wheel_tests": 315
+}

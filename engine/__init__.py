@@ -25,6 +25,8 @@ from engine.backtest import BacktestBar, OrderIntent, ResearchState, BacktestRes
 from engine.prepared import PreparedBacktest, prepare_backtest
 from engine.comparison import compare_backtests
 from engine.rebalance import RebalancePlan, PlannedAllocation, plan_rebalance
+from engine.order_tape import TimedOrderIntent, PreparedOrderTape, prepare_order_tape
+from engine.tape_replay import run_order_tape
 
 __all__ = [
     "DailyMarketRule",
@@ -45,4 +47,5 @@ __all__ = [
     "BacktestBar", "OrderIntent", "ResearchState", "BacktestResult", "run_backtest",
     "RebalancePlan", "PlannedAllocation", "plan_rebalance",
     "PreparedBacktest", "prepare_backtest", "run_prepared_backtest", "compare_backtests",
+    "TimedOrderIntent", "PreparedOrderTape", "prepare_order_tape", "run_order_tape",
 ]

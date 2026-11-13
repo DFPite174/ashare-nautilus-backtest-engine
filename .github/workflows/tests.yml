@@ -22,6 +22,8 @@ jobs:
         run: python examples/regular_backtest.py --bars examples/data/bars_daily.csv --rules examples/data/rules.csv --output daily-result.json
       - name: Exercise sparse daily replay
         run: python examples/regular_backtest.py --bars examples/data/bars_daily.csv --rules examples/data/rules.csv --data-mode sparse --output daily-result.json
+      - name: Exercise frozen order replay
+        run: python examples/replay_order_tape.py --bars examples/data/bars_daily.csv --rules examples/data/rules.csv --orders examples/data/orders_daily.csv --output daily-result.json
       - name: Build platform wheel
         run: python -m pip wheel --no-deps --wheel-dir dist .
       - name: Install wheel outside checkout

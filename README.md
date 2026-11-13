@@ -75,6 +75,12 @@ print(result.to_dict())
 
 ### 日频重复实验
 
+上游已经给出明确数量的调仓指令时，使用 `prepare_order_tape(...)` 冻结决策时间与意图，再调用 `run_order_tape(prepared, tape)`。此入口专注执行与账户核验，每天只向 NT 投递实际持仓和已知待执行标的的行情；完整市场输入仍先校验并保留指纹。它不调用研究信号函数，详见 [冻结订单回放](docs/order-tape.md)。
+
+```powershell
+python examples/replay_order_tape.py --bars examples/data/bars_daily.csv --rules examples/data/rules.csv --orders examples/data/orders_daily.csv --output daily-result.json
+```
+
 通过 `prepare_backtest(...)` 固定校验后的输入，再用 `run_prepared_backtest(prepared, portfolio_signal=..., data_mode="sparse")` 运行候选；每轮重新建立账户和订单状态。完整用法见 [准备数据复用](docs/prepared-data.md)。
 
 | `data_mode` | 数据处理方式 |
@@ -152,6 +158,7 @@ python examples/validate_tushare_lake.py --root "C:\path\to\Tushare_DB" --output
 
 ## 延伸文档
 
+- [冻结订单专用回放验收](docs/order-tape-validation.md)：2.4.0 固定指令回放、315 项测试、计时边界及未达到的准备/内存门槛。
 - [分层改造第二批验收](docs/layered-batch2-validation.md)：2.3.0 输入复用、稀疏原型、财务一致性及性能门槛。
 - [分层改造第一批验收](docs/layered-batch1-validation.md)：2.2.0 接口、完整测试、500 股五年三次复测及尚未达到的性能目标。
 
@@ -159,6 +166,7 @@ python examples/validate_tushare_lake.py --root "C:\path\to\Tushare_DB" --output
 - [能力矩阵](docs/capabilities.md)：普通股、基础可转债及证据边界。
 - [账户快照契约](docs/account-contract.md)：可用资金、应收、估值时间与日终核验。
 - [准备数据复用](docs/prepared-data.md)：一次校验、输入指纹及跨轮账户隔离。
+- [冻结订单回放](docs/order-tape.md)：上游指令的日线执行核验、时间门槛及 CSV 示例。
 - [数据投递模式](docs/data-delivery.md)：完整、逐日流式与日线稀疏事件路径。
 - [结果比较](docs/result-comparison.md)：相同输入与模型条件下的业务首差。
 - [意图契约](docs/order-intents.md)：字段校验、唯一标识与最早执行时间。

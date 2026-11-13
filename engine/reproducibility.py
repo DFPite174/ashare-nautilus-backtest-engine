@@ -68,7 +68,7 @@ def digest(value):
 
 def build_manifest(instruments, bars, rules, actions, sessions, fee, signal, *, initial_cash,
                    participation_rate, slippage_bps, strategy_id, strategy_params, data_snapshot_id,
-                   _input_sha256=None,_data_delivery='full'):
+                   _input_sha256=None,_data_delivery='full',_order_tape_sha256=None):
     root = Path(__file__).resolve().parents[1]
     try:
         commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=root, stderr=subprocess.DEVNULL, text=True).strip()
@@ -112,5 +112,8 @@ def build_manifest(instruments, bars, rules, actions, sessions, fee, signal, *, 
         environment={'python':platform.python_version(), 'platform':platform.platform(),
                      **{name:importlib.metadata.version(name) for name in ('nautilus_trader','pydantic','numpy','pandas','pyarrow')}},
         config=canonical(config))
+    if _order_tape_sha256 is not None:
+        manifest['order_tape_sha256']=_order_tape_sha256
+        manifest['decision_contract']='daily-close-frozen-tape-v1'
     manifest['run_sha256'] = digest(manifest)
     return manifest

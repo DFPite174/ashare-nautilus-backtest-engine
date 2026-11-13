@@ -8,6 +8,7 @@ import hashlib
 import inspect
 from types import MappingProxyType
 from zoneinfo import ZoneInfo
+from collections import defaultdict
 
 from engine.reproducibility import digest
 
@@ -39,6 +40,8 @@ class PreparedBacktest:
     master: Mapping
     input_sha256: str
     validation_version: str
+    bars_by_day: Mapping
+    daily_only: bool
 
     def __new__(cls, *args, **kwargs):
         raise TypeError("Use prepare_backtest() to create validated inputs")
@@ -51,7 +54,7 @@ class PreparedBacktest:
 
 def prepare_backtest(instruments, bars, rules, *, corporate_actions=(), trading_days=None):
     """Detach inputs, validate market coverage once, and cache their content hash."""
-    from engine.backtest import BacktestBar, _validate
+    from engine.backtest import BacktestBar, _validate, TZ, at
     from contracts import Instrument, ConvertibleBondInstrument, CorporateAction
 
     instruments = tuple(instruments)
@@ -73,12 +76,18 @@ def prepare_backtest(instruments, bars, rules, *, corporate_actions=(), trading_
         trading_days = tuple(_freeze(day) for day in trading_days)
     master, sessions = _validate(instruments, bars, frozen_rules, actions, Decimal(1), 1, trading_days)
     sessions = tuple(sessions)
+    by_day=defaultdict(list);daily_only=True
+    for bar in bars:
+        day=bar.end.astimezone(TZ).date();by_day[day].append(bar)
+        if bar.start!=at(day,9,30) or bar.end!=at(day,15):daily_only=False
+    bars_by_day=MappingProxyType({day:tuple(by_day[day]) for day in sessions})
     input_sha256 = digest({'instruments': sorted(instruments, key=lambda i: i.symbol),
         'bars': sorted(bars, key=lambda b: (b.start, b.symbol)), 'rules': frozen_rules,
         'actions': sorted(actions, key=lambda a: (a.symbol, a.ex_date)), 'calendar': sessions})
     prepared = object.__new__(PreparedBacktest)
     for key, value in dict(instruments=instruments, bars=bars, actions=actions, sessions=sessions,
                            rules=frozen_rules, master=MappingProxyType(master),
-                           input_sha256=input_sha256, validation_version=_validation_version(_validate)).items():
+                           input_sha256=input_sha256, validation_version=_validation_version(_validate),
+                           bars_by_day=bars_by_day,daily_only=daily_only).items():
         object.__setattr__(prepared, key, value)
     return prepared

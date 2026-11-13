@@ -334,8 +334,11 @@ class _ResearchStrategy(Strategy):
             intents=self.portfolio_signal(closed,self._state(b.end)) or []
         else:
             intents=self.signal(b,self._state(b.end)) or []
-        for i in validate_intents(intents,self.master,b.end,self.seen_intent_ids):
-            earliest=max(nanos(b.end),nanos(i.earliest_execution)) if i.earliest_execution else nanos(b.end)
+        self._queue_intents(intents,b.end)
+
+    def _queue_intents(self,intents,decision_time):
+        for i in validate_intents(intents,self.master,decision_time,self.seen_intent_ids):
+            earliest=max(nanos(decision_time),nanos(i.earliest_execution)) if i.earliest_execution else nanos(decision_time)
             self.pending.append((earliest,i))
 
     def _inactive_bar(self,b):
@@ -496,7 +499,7 @@ class _ResearchStrategy(Strategy):
         self.nav.append(row);self.closed.add(day)
 
 
-def _run_backtest(instruments, bars, rules, signal=None, *, corporate_actions=(), initial_cash=D(100000), participation_rate=.01, trading_days=None, fee_model=None, portfolio_signal=None, slippage_bps=0, strategy_id=None, strategy_params=None, data_snapshot_id=None, data_mode='full', _prepared=None):
+def _run_backtest(instruments, bars, rules, signal=None, *, corporate_actions=(), initial_cash=D(100000), participation_rate=.01, trading_days=None, fee_model=None, portfolio_signal=None, slippage_bps=0, strategy_id=None, strategy_params=None, data_snapshot_id=None, data_mode='full', _prepared=None, _tape=None):
     """Run one isolated, shared-cash portfolio. Rules keyed by (symbol, local date)."""
     initial_cash=D(str(initial_cash))
     if _prepared is None:
@@ -510,7 +513,8 @@ def _run_backtest(instruments, bars, rules, signal=None, *, corporate_actions=()
     if (signal is None)==(portfolio_signal is None):raise ValueError('Provide exactly one of signal or portfolio_signal')
     slippage_bps=D(str(slippage_bps))
     if not slippage_bps.is_finite() or not 0<=slippage_bps<10000:raise ValueError('Invalid slippage_bps')
-    if data_mode not in {'full','session','sparse'}:raise ValueError('Invalid data_mode')
+    if data_mode not in {'full','session','sparse','orders'}:raise ValueError('Invalid data_mode')
+    if data_mode=='orders' and (_prepared is None or _tape is None):raise ValueError('Use run_order_tape for orders delivery')
     if data_mode=='sparse' and any(b.start.astimezone(TZ)!=at(b.start.astimezone(TZ).date(),9,30) or b.end.astimezone(TZ)!=at(b.end.astimezone(TZ).date(),15) for b in bars):
         raise ValueError('Sparse delivery requires daily bars')
     cb_symbols = {s for s, i in master.items() if getattr(i, 'asset_class', None) == AssetClass.CONVERTIBLE_BOND or isinstance(i, ConvertibleBondInstrument)}
@@ -530,7 +534,8 @@ def _run_backtest(instruments, bars, rules, signal=None, *, corporate_actions=()
     manifest=build_manifest(instruments,bars,rules,actions,sessions,fee,portfolio_signal or signal,
         initial_cash=initial_cash,participation_rate=participation_rate,slippage_bps=slippage_bps,
         strategy_id=strategy_id,strategy_params=strategy_params,data_snapshot_id=data_snapshot_id,
-        _input_sha256=_prepared.input_sha256 if _prepared is not None else None,_data_delivery=data_mode)
+        _input_sha256=_prepared.input_sha256 if _prepared is not None else None,_data_delivery=data_mode,
+        _order_tape_sha256=_tape.sha256 if _tape is not None else None)
     liquidity=BarLiquidity(slippage_bps)
     # Complete research history lives in our immutable callback snapshots.
     eng=BacktestEngine(config=BacktestEngineConfig(trader_id=TraderId('RESEARCH-001'),logging=LoggingConfig(log_level='ERROR'),cache=CacheConfig(bar_capacity=2,tick_capacity=2)))
@@ -542,7 +547,11 @@ def _run_backtest(instruments, bars, rules, signal=None, *, corporate_actions=()
             inc_str = '.001' if prec == 3 else '.01'
             native[symbol]=Equity(instrument_id=InstrumentId(Symbol(symbol),SIM),raw_symbol=Symbol(symbol.split('.')[0]),currency=CNY,price_precision=prec,price_increment=Price.from_str(inc_str),lot_size=Quantity.from_int(i.lot_size),ts_event=nanos(at(sessions[0],0)),ts_init=nanos(at(sessions[0],0)))
             eng.add_instrument(native[symbol])
-        strategy=_ResearchStrategy(bars,rules,master,sessions,actions,signal,initial_cash,participation_rate,native,fee,cash_module,liquidity,portfolio_signal)
+        if _tape is None:
+            strategy=_ResearchStrategy(bars,rules,master,sessions,actions,signal,initial_cash,participation_rate,native,fee,cash_module,liquidity,portfolio_signal)
+        else:
+            from engine.tape_replay import _TapeStrategy
+            strategy=_TapeStrategy(_prepared,_tape,signal,initial_cash,participation_rate,native,fee,cash_module,liquidity)
         eng.add_strategy(strategy)
         bar_types={};statistics=dict(data_mode=data_mode,market_events=0,boundary_events=0,peak_batch_events=0)
         if data_mode=='full':
@@ -552,8 +561,14 @@ def _run_backtest(instruments, bars, rules, signal=None, *, corporate_actions=()
             eng.run(start=at(sessions[0],0),end=at(sessions[-1],15))
         else:
             for day in sessions:
-                active={i.symbol for eligible,i in strategy.pending if eligible<=nanos(at(day,9,30))} if data_mode=='sparse' else None
-                data=build_events(strategy.by_day[day],rules,native,participation_rate,liquidity,bar_types,active)
+                active={i.symbol for eligible,i in strategy.pending if eligible<=nanos(at(day,9,30))} if data_mode in {'sparse','orders'} else None
+                day_bars=strategy.by_day[day]
+                if data_mode=='orders':
+                    selected=active|{s for s,q in strategy.ledger.positions.items() if q}
+                    day_bars=[b for b in day_bars if b.symbol in selected]
+                    strategy.current_bars={b.symbol:b for b in day_bars}
+                    statistics['native_market_bars']=statistics.get('native_market_bars',0)+sum(b.volume>0 and rules[b.symbol,day]['trade_status']=='OPEN' for b in day_bars)
+                data=build_events(day_bars,rules,native,participation_rate,liquidity,bar_types,active)
                 statistics['market_events']+=len(data)
                 statistics['peak_batch_events']=max(statistics['peak_batch_events'],len(data)+1)
                 if data:eng.add_data(data)
@@ -572,6 +587,7 @@ def _run_backtest(instruments, bars, rules, signal=None, *, corporate_actions=()
                   **({'earliest_execution':i.earliest_execution.isoformat()} if i.earliest_execution else {})} for _,i in strategy.pending]
         result=BacktestResult(native_cash,strategy.ledger.cash,{s:strategy.ledger.positions.get(s,D(0)) for s in master},strategy.fills,strategy.rejections,strategy.nav,list(cash_module.journal),orders,pending,manifest)
         result.run_statistics=statistics
+        if _tape is not None:statistics.update(input_bars=len(bars),scheduled_intents=len(_tape.entries))
         return result
     finally:
         try:
