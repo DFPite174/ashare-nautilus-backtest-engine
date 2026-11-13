@@ -22,12 +22,12 @@ def _validation_version(validator):
 def _freeze(value):
     if type(value) is datetime and value.tzinfo is not None and type(value.tzinfo) not in (timezone, ZoneInfo):
         raise TypeError("Prepared datetime requires immutable timezone or ZoneInfo")
+    if type(value) in (str, int, float, bool, Decimal, date, datetime, type(None)):
+        return value
     if isinstance(value, Mapping):
         return MappingProxyType({_freeze(k): _freeze(v) for k, v in value.items()})
     if isinstance(value, (list, tuple)):
         return tuple(_freeze(v) for v in value)
-    if type(value) in (str, int, float, bool, Decimal, date, datetime, type(None)):
-        return value
     raise TypeError(f"Unsupported prepared input value: {type(value).__name__}")
 
 

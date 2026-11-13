@@ -158,6 +158,7 @@ python examples/validate_tushare_lake.py --root "C:\path\to\Tushare_DB" --output
 
 ## 延伸文档
 
+- [准备冻结验收](docs/prepared-scalar-validation.md)：2.5.4 精确标量检查顺序、341 项测试与前后三次准备计时。
 - [活动撤单与规划复核](docs/active-cancellation-validation.md)：2.5.3 日终撤单过滤、340 项测试及不继续扩大低收益优化的依据。
 - [湖输入内存验收](docs/lake-memory-validation.md)：2.5.2 生产湖分批读取、339 项测试及同数据前后三次测量。
 - [必要优化验收](docs/essential-validation.md)：2.5.1 摘要标量路径、332 项测试及宽持仓密集订单回归。
