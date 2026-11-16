@@ -26,6 +26,8 @@ python examples/regular_backtest.py --bars examples/data/bars_daily.csv --rules 
 python examples/regular_backtest.py --bars examples/data/bars_minute.csv --frequency MINUTE --rules examples/data/rules.csv --output minute-result.json
 ```
 
+已有本地 Tushare 湖时，可运行[真实数据候选闭环](docs/research-workflow-validation.md)：周频目标 → 实际账户规划 → 成交与约束 → 下次调仓反馈，附同池基准、容量/滑点压力及独立预期。该样例用于工程验收，股票池与数据边界在报告中列明。
+
 ## 最小接口
 
 ```python
