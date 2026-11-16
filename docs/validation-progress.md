@@ -15,4 +15,4 @@
 | 二 / 2.3.0 | 准备复用、增量状态、全市场稀疏回调；准备后 29.65 秒，268 测试 | [第二批](layered-batch2-validation.md) |
 | 一 / 2.2.0 | 接口、调仓、账户契约与基础热点；整进程 85.95 秒，222 测试 | [第一批](layered-batch1-validation.md) |
 
-必要 P0–P2 的当前范围与下一步见[执行计划](superpowers/plans/2026-11-13-essential-p0-p2.md)。首次运行 20 秒及完整 500 股五年峰值 1 GiB 尚未全部达到；短周期密集实验不替代这两项门槛。
+当前目标和后续顺序见[重新评估计划](superpowers/plans/2026-11-16-goal-reassessment.md)，原[执行记录](superpowers/plans/2026-11-13-essential-p0-p2.md)保留追溯。首次运行 20 秒及完整 500 股五年峰值 1 GiB 尚未全部达到；短周期密集实验不替代这两项门槛。

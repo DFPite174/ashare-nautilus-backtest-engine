@@ -158,6 +158,7 @@ python examples/validate_tushare_lake.py --root "C:\path\to\Tushare_DB" --output
 
 ## 延伸文档
 
+- [当前目标与后续任务](docs/superpowers/plans/2026-11-16-goal-reassessment.md)：以真实低频用例闭环为主线，明确优先级、验收和暂停条件。
 - [本地湖密集组合验收](docs/dense-lake-validation.md)：2.6.0 实库 64/128 股组合、申报限流修复及三路径对照。
 - [改造与验收进度](docs/validation-progress.md)：各批版本、实测结果、证据边界及历史记录索引。
 
