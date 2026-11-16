@@ -30,6 +30,8 @@ python examples/regular_backtest.py --bars examples/data/bars_minute.csv --frequ
 
 2.7.0 增加按意图的执行结果与未成交数量、公共完整结果比较，以及三次新进程测量命令，见[研究交付与周转成本](docs/research-delivery-validation.md)。
 
+独立 broker 的同数据、同指令与同费用最小对照见[共同规则对账](docs/common-broker-validation.md)，其中列明适配项和未验证的 A 股能力。
+
 ## 最小接口
 
 ```python

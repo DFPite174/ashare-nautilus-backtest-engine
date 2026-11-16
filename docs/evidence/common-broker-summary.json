@@ -1,0 +1,98 @@
+{
+  "status": "PASS_COMMON_SUBSET",
+  "snapshot": {
+    "schema_version": 1,
+    "source": "local-tushare-parquet",
+    "source_files_sha256": {
+      "lake/meta/stock_basic.parquet": "b5ef50993877d27ea09f9b1d4e50ae412403f7bf64d1ace9375f4aab3075b13e",
+      "lake/meta/trade_cal.parquet": "cbcefff493a287fa6c75b81c93fa3c71931b7764823109e81b9582985e22127c",
+      "lake/market/daily/year=2025/daily_2025.parquet": "9043435012898fe9573a00714c4bcadc276a88ad8c2764c6eddb0f58332be547",
+      "lake/market/stk_limit/year=2025/stk_limit_2025.parquet": "0a8ce11bd40a3c7a601033e429043cb8ac29345475bc9f706241aedc9c2da28f",
+      "lake/market/suspend_d/year=2025/suspend_d_2025.parquet": "816cb672a51f860addcc0d223500237013e0bdd908397d459dd5850a218c0ea8",
+      "lake/actions/dividend.parquet": "cb9339526456cee9ab0b33ddba4ed7646b9e014f6e25ebe3434b1cb2309e43c2"
+    },
+    "historical_vintage_pit": false,
+    "price_adjustment": "raw",
+    "volume_unit": "shares",
+    "security_universe": "explicit symbols; current master listing date only",
+    "deduplicated_actions": 0,
+    "excluded_unimplemented_actions": 119,
+    "partial_suspension_policy": "DAY_BLOCKED",
+    "snapshot_id": "6d94e0ddce1fb0d56d93a279e56f713f1f74f6f44d603adb6aa9d0407a81301e"
+  },
+  "manifest": {
+    "schema_version": 1,
+    "input_sha256": "f1310c1392f9fcc9f0c626c900c5345c6318316a1a8026ef46d95c15a4f4666e",
+    "data_snapshot_id": "6d94e0ddce1fb0d56d93a279e56f713f1f74f6f44d603adb6aa9d0407a81301e",
+    "strategy_id": "common-broker-fixed-shares",
+    "strategy_source_sha256": "e553c79f9d2ec545cdacaea72a9f49e62159fcf8a91f69c4939e38ed64b3323e",
+    "strategy_params": {},
+    "code_commit": "58962ec6c44ce5d92332dfef1705b7df9e9f772a",
+    "source_sha256": "6d142da612813ffa0bc059f25c696727d1a0173649168cf54e1ba5da5dd7f96a",
+    "environment": {
+      "python": "3.12.10",
+      "platform": "Windows-11-10.0.26200-SP0",
+      "nautilus_trader": "1.231.0",
+      "pydantic": "2.14.1",
+      "numpy": "2.2.6",
+      "pandas": "2.3.3",
+      "pyarrow": "26.0.0"
+    },
+    "config": {
+      "data_delivery": "full",
+      "execution_model": "bar-synthetic-l2-v1",
+      "execution_policy": "same-open-sell-before-buy-v1",
+      "fee_schedules": {
+        "f83f1448debcaba210d91ae3085997a168a0da619d77c0260531dc00446fee46": {
+          "2025-01-02": {
+            "commission_rate": "0.0003",
+            "min_commission": "5",
+            "stamp_duty_rate": "0.0005",
+            "transfer_fee_rate": "0.00001"
+          }
+        }
+      },
+      "initial_cash": "100000",
+      "native_order_submit_rate": "1000000/00:00:01",
+      "participation_rate": "0.01",
+      "slippage_bps": "0",
+      "symbol_fee_policy": {
+        "000001.SZ": "f83f1448debcaba210d91ae3085997a168a0da619d77c0260531dc00446fee46",
+        "600000.SH": "f83f1448debcaba210d91ae3085997a168a0da619d77c0260531dc00446fee46"
+      }
+    },
+    "run_sha256": "b1390fa14a1b9cbf30e1641c8521cc53d18c601c0ed425750650255a61a8532b"
+  },
+  "source_sha256": "52da843bf92baf3db35c69ba8213e5cf736e52a79d49cf3bdc6451402be953e4",
+  "backtrader": {
+    "version": "1.9.78.123",
+    "commit": "b853d7c90b6721476eb5a5ea3135224e33db1f14",
+    "clean": true
+  },
+  "counts": {
+    "symbols": 2,
+    "sessions": 7,
+    "bars": 14,
+    "fills": 4
+  },
+  "unrounded_fees": {
+    "equal": false,
+    "first_difference": {
+      "path": "fills[0].fee",
+      "reference": "5.01",
+      "candidate": "5.01144"
+    },
+    "money_tolerance": "0.0000001 CNY"
+  },
+  "matched_cent_fees": {
+    "equal": true,
+    "first_difference": null,
+    "money_tolerance": "0.0000001 CNY"
+  },
+  "limits": [
+    "next-open market orders only; no active capacity/limit/lifecycle constraints",
+    "no T+1 enforcement, corporate actions, halt rejection or partial fills tested in Backtrader",
+    "fee hook is custom; cent rounding explicitly adapted; broker/matching remains native",
+    "date-level comparison; not intrabar event/queue equivalence or speed ranking"
+  ]
+}
