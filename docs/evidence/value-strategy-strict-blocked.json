@@ -176,13 +176,13 @@
     "mathematical_quantity": "423.28",
     "fractional_policy": "reject"
   },
-  "seconds": 10.927560099982657,
-  "peak_working_set_mib": 729.75390625,
-  "script_sha256": "58011d8c616cf6115e85ca3b47d3c12b2212c7cc56a9ac33a8434c8baef7a85b",
+  "seconds": 12.160692600009497,
+  "peak_working_set_mib": 794.87109375,
+  "script_sha256": "63de5db632f44187178180e201d04df75a7ad05453904185bf49f434b84fe97c",
   "data_preparation_sha256": "606871aceaa8f4372ad90f995eed71023e818d41b5bf118bf99eb2e960738836",
   "redacted_fields": [
     "derived_snapshot.symbols",
     "runs.manifest.config.symbol_fee_policy"
   ],
-  "private_summary_sha256": "66b51dc59a4c4ba304375db20eb54d7db45d5438625af1c30fb64f081dc974d9"
+  "private_summary_sha256": "755aa74f0084cb13f712bdbad3bf9f52a452852a381a8a851ba1e91bbf8dbd56"
 }

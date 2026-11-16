@@ -35,6 +35,7 @@ def test_targets_call_original_selector_without_reading_holdout_panels(tmp_path)
     assert len(targets['V']) == 1 and targets['V'][0].weights == {'A': 1/30}
     assert provenance['holdout_evaluated'] is False
     assert len(provenance['panels_sha256']) == 1
+    assert not (src/'__pycache__').exists(), 'Selector loading must not write into upstream project'
     broken = pd.read_csv(panels/'panel_20201231.csv', dtype=str)
     broken['signal_date'] = '20210101'; broken.to_csv(panels/'panel_20201231.csv', index=False)
     with pytest.raises(ValueError, match='panel'):

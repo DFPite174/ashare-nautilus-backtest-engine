@@ -36,7 +36,7 @@
         "max_drawdown": -0.23790341845974528,
         "sharpe_zero_rf": 0.14500892601654164
       },
-      "seconds": 8.966739299998153,
+      "seconds": 7.732106699957512,
       "manifest": {
         "schema_version": 1,
         "input_sha256": "764ab66a8cdb562995abb9bded49e40ef6c65184ced2c8b85b8a2e06bc064b82",
@@ -47,7 +47,7 @@
           "policy": "one submission; no chase; next month actual account feedback",
           "target_bundle": "eea2c35455f1f4f44920efebe472ae0850470c4047777a78123cbafa7632fb53"
         },
-        "code_commit": "7bed7086032b5de8d0c3993266c062fe74bd8a02",
+        "code_commit": "8499940520105fae4ed7cfc0fb914aba832d0fba",
         "source_sha256": "6d142da612813ffa0bc059f25c696727d1a0173649168cf54e1ba5da5dd7f96a",
         "environment": {
           "python": "3.12.10",
@@ -90,9 +90,9 @@
           "slippage_bps": "10",
           "symbol_fee_policy_sha256": "432e263a3263c766b146333b1dcbca41c90b04dd404bc68f103dce895248961a"
         },
-        "run_sha256": "50d22ee5e2354872e310e21e6e1eb7a027a53b71908cca78aee7c9a646fa33eb"
+        "run_sha256": "9dcf518882ec094c50c17d6ed5bc1be4ec50ae2d1d40f7b13110fbc26ddae880"
       },
-      "artifact_sha256": "8e087727b7e5d7270746e47ffe7f98ccb6ba03a62174b5a060880dc2e6df2538"
+      "artifact_sha256": "6feb4b697271ebfbc125235c8dea75eb71dc069fb37ead45c362b5350d1f9c5e"
     },
     {
       "name": "R30",
@@ -118,7 +118,7 @@
         "max_drawdown": -0.2946755549301586,
         "sharpe_zero_rf": 0.6531107114825866
       },
-      "seconds": 9.005543600011151,
+      "seconds": 5.85533019999275,
       "manifest": {
         "schema_version": 1,
         "input_sha256": "764ab66a8cdb562995abb9bded49e40ef6c65184ced2c8b85b8a2e06bc064b82",
@@ -129,7 +129,7 @@
           "policy": "one submission; no chase; next month actual account feedback",
           "target_bundle": "eea2c35455f1f4f44920efebe472ae0850470c4047777a78123cbafa7632fb53"
         },
-        "code_commit": "7bed7086032b5de8d0c3993266c062fe74bd8a02",
+        "code_commit": "8499940520105fae4ed7cfc0fb914aba832d0fba",
         "source_sha256": "6d142da612813ffa0bc059f25c696727d1a0173649168cf54e1ba5da5dd7f96a",
         "environment": {
           "python": "3.12.10",
@@ -172,9 +172,9 @@
           "slippage_bps": "10",
           "symbol_fee_policy_sha256": "432e263a3263c766b146333b1dcbca41c90b04dd404bc68f103dce895248961a"
         },
-        "run_sha256": "f44589c7c60943d5a5dbbf21903c66311eacfd8bd94df993b21427ab103343e2"
+        "run_sha256": "b110a2829a4cda7662e93b362f0c2abcbd44a5cb0e9b26b2923efd62287dd0a2"
       },
-      "artifact_sha256": "869b8beb02fafcea578d81d1c8ab0346d8c7daf5f9b6b97c1419f7a9f9a0d0eb"
+      "artifact_sha256": "a2fe1bcbec1587bf06da8d56648895606ee2d8de8449af49c6b3f1eb95d5bb6f"
     },
     {
       "name": "V-repeat",
@@ -204,7 +204,7 @@
         "max_drawdown": -0.23790341845974528,
         "sharpe_zero_rf": 0.14500892601654164
       },
-      "seconds": 10.930110999965109,
+      "seconds": 8.853562200034503,
       "manifest": {
         "schema_version": 1,
         "input_sha256": "764ab66a8cdb562995abb9bded49e40ef6c65184ced2c8b85b8a2e06bc064b82",
@@ -215,7 +215,7 @@
           "policy": "one submission; no chase; next month actual account feedback",
           "target_bundle": "eea2c35455f1f4f44920efebe472ae0850470c4047777a78123cbafa7632fb53"
         },
-        "code_commit": "7bed7086032b5de8d0c3993266c062fe74bd8a02",
+        "code_commit": "8499940520105fae4ed7cfc0fb914aba832d0fba",
         "source_sha256": "6d142da612813ffa0bc059f25c696727d1a0173649168cf54e1ba5da5dd7f96a",
         "environment": {
           "python": "3.12.10",
@@ -258,9 +258,9 @@
           "slippage_bps": "10",
           "symbol_fee_policy_sha256": "432e263a3263c766b146333b1dcbca41c90b04dd404bc68f103dce895248961a"
         },
-        "run_sha256": "50d22ee5e2354872e310e21e6e1eb7a027a53b71908cca78aee7c9a646fa33eb"
+        "run_sha256": "9dcf518882ec094c50c17d6ed5bc1be4ec50ae2d1d40f7b13110fbc26ddae880"
       },
-      "artifact_sha256": "8e087727b7e5d7270746e47ffe7f98ccb6ba03a62174b5a060880dc2e6df2538"
+      "artifact_sha256": "6feb4b697271ebfbc125235c8dea75eb71dc069fb37ead45c362b5350d1f9c5e"
     }
   ],
   "upstream": {
@@ -471,13 +471,13 @@
     "journal_equal": true,
     "equal": true
   },
-  "seconds": 37.43538520002039,
-  "peak_working_set_mib": 793.5546875,
-  "script_sha256": "58011d8c616cf6115e85ca3b47d3c12b2212c7cc56a9ac33a8434c8baef7a85b",
+  "seconds": 29.255445900023915,
+  "peak_working_set_mib": 756.0078125,
+  "script_sha256": "63de5db632f44187178180e201d04df75a7ad05453904185bf49f434b84fe97c",
   "data_preparation_sha256": "606871aceaa8f4372ad90f995eed71023e818d41b5bf118bf99eb2e960738836",
   "redacted_fields": [
     "derived_snapshot.symbols",
     "runs.manifest.config.symbol_fee_policy"
   ],
-  "private_summary_sha256": "b8851ac915d98b36fba254542b2b450e662b78b215264b0c23eaf2a2c1eb21cb"
+  "private_summary_sha256": "78cb27c9c3d40691d9002443c675d7a8d049acc8dd845b27d707a88d5d3abc98"
 }

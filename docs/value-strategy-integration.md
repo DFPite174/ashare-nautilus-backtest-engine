@@ -54,11 +54,12 @@ V 在该区间落后于这个单一固定对照，不能据此宣称策略有优
 - 现金分红按登记日股数乘每股红利重算；送转按前一交易日股数计算整数新股数，再加减除权日成交，与当日持仓核对。
 - 碎股金额按批准公式独立重算，要求新鲜的前一交易日收盘价；人工用例及故意篡改数量/现金的测试能检出错误。这验证本近似模型，不验证真实登记结果。
 - 新建账户重复 V，完整业务字段、订单终态、未执行和权益流水一致；冻结目标覆盖全部36个月、实际下一交易日及全部回调交付。目标权重 JSON 保持结构化字典。
+- 上游选择器按源文件无缓存加载，不向其目录写入字节码；原函数、调用参数及前后源码哈希核验保持不变。
 - 输入输出路径重叠在任何写入前拒绝；默认严格政策与现金替代政策的目标、市场快照一致，政策差异另行指纹化。CI 不分发也不下载付费因子或市场数据。
 
 源码与仓库外已安装的既有 2.7.0 执行核各 **371 项测试通过**；只读审查未发现阻断问题。修改范围限于调用方、数据准备、测试与文档，未重建或更改本地执行核 wheel。
 
-最终一次同进程完整接入共 **37.44 秒**、进程峰值约 **793.55 MiB**，包含目标生成、派生快照、加载准备、三组回放/校验及详细归档；不含解释器/导入及最后摘要写盘，未清空 OS 缓存。这是本机单次使用记录，不是跨框架排名，也不替代原 500 股五年目标。
+最终一次同进程完整接入共 **29.26 秒**、进程峰值约 **756.01 MiB**，包含目标生成、派生快照、加载准备、三组回放/校验及详细归档；不含解释器/导入及最后摘要写盘，未清空 OS 缓存。这是本机单次使用记录，不是跨框架排名，也不替代原 500 股五年目标。
 
 ```powershell
 $valueDbRoot = "C:\Users\SKT80\Downloads\MyProj\my_upload\Tushare_DB"
@@ -68,7 +69,7 @@ python examples/integrate_value_strategy.py --root $valueDbRoot --strategy-root 
 
 省略 `--fractional-policy cash_in_lieu` 可复验严格阻断。脚本依赖已有上游源码、schedule 和面板，不自带它们；不读取 token、`.env` 或数据库 `config.py`，不发起 Tushare 请求。
 
-本地目录保存 `frozen_targets.json`、`V.json`、`R30.json`、`V-repeat.json`、完整 `summary.json` 和派生湖。`public_summary.json` 去掉联合池逐股名单及可泄露该名单的逐股费率映射，保留摘要、文件/目标哈希；它不是原生完整结果差分输入。本机交付路径为工作区 `../benchmark/value-strategy-final-structured/`，严格失败见 `../benchmark/value-strategy-strict-published/`。
+本地目录保存 `frozen_targets.json`、`V.json`、`R30.json`、`V-repeat.json`、完整 `summary.json` 和派生湖。`public_summary.json` 去掉联合池逐股名单及可泄露该名单的逐股费率映射，保留摘要、文件/目标哈希；它不是原生完整结果差分输入。本机交付路径为工作区 `../benchmark/value-strategy-readonly-final/`，严格失败见 `../benchmark/value-strategy-strict-published/`。
 
 ## 研究与系统边界
 

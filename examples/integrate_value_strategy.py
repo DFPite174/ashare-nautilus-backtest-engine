@@ -5,7 +5,7 @@ from copy import deepcopy
 from dataclasses import asdict, replace
 from datetime import datetime
 from decimal import Decimal as D, ROUND_HALF_UP
-import importlib.util
+import runpy
 import json
 from pathlib import Path
 import sys
@@ -30,9 +30,7 @@ def load_targets(root):
     source = root/'src/value_quant/portfolio.py'
     provenance = dict(selector_sha256=sha(source), panels_sha256={}, holdout_evaluated=False,
                       variants=['V', 'R30'], top_n=30, control_seed='20261016')
-    spec = importlib.util.spec_from_file_location('frozen_value_selector', source)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    selector = runpy.run_path(str(source), run_name='frozen_value_selector')['build_targets']
     folder = root/'outputs/history_provider_v1'
     provenance['schedule_sha256'] = sha(folder/'schedule.csv')
     schedule = pd.read_csv(folder/'schedule.csv', dtype=str)
@@ -53,7 +51,7 @@ def load_targets(root):
         if not frame.signal_date.eq(step['signal_date']).all() or frame.ts_code.duplicated().any():
             raise ValueError('Invalid panel date or duplicate security')
         for variant in result:
-            selected = module.build_targets(frame, variant, 30)
+            selected = selector(frame, variant, 30)
             weights = selected.loc[selected.target_weight.gt(0)].set_index('ts_code').target_weight.to_dict()
             if len(weights) > 30:
                 raise ValueError('Upstream selection exceeds Top30')
