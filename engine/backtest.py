@@ -298,10 +298,11 @@ class _ResearchStrategy(Strategy):
                     qty=self._native_quantity(a.symbol);fraction=qty*ratio-(qty*ratio).to_integral_value(rounding='ROUND_FLOOR')
                     if fraction and a.fractional_policy=='floor':
                         raise ValueError("Strict backtest requires reject or cash_in_lieu for fractional account entitlement")
-                    for pos in self.cache.positions_open(instrument_id=self.native[a.symbol].id):
+                    positions=self.cache.positions_open(instrument_id=self.native[a.symbol].id)
+                    for pos in positions:
                         load_bridge().apply_split(pos,ratio,event.ts_event,self.native[a.symbol],fractional_policy='cash_in_lieu' if a.fractional_policy=='cash_in_lieu' else 'reject')
                     self.gateway.apply_stock_split(a.symbol,ratio,share_listing_date=a.share_listing_date,trade_date=day)
-                    self.portfolio.initialize_positions()
+                    if positions:self.portfolio.initialize_positions()
                     if fraction:
                         px=a.fractional_cash_price
                         if px is None: px=self.last_close[a.symbol]/ratio
