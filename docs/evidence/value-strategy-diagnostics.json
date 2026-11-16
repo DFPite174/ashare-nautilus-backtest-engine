@@ -1,0 +1,75 @@
+{
+  "source_summary_sha256": "78cb27c9c3d40691d9002443c675d7a8d049acc8dd845b27d707a88d5d3abc98",
+  "source_artifact_sha256": {
+    "V": "6feb4b697271ebfbc125235c8dea75eb71dc069fb37ead45c362b5350d1f9c5e",
+    "R30": "a2fe1bcbec1587bf06da8d56648895606ee2d8de8449af49c6b3f1eb95d5bb6f"
+  },
+  "action_input_sha256": "8dbe38fff454e15a9ca8363f837da5b6351bb63d2a93e7144a3ce6fafe87ad08",
+  "script_sha256": "432b67c6a671923185be097fccf35d1a28822d4786b738fdc2229e9ff30390e4",
+  "holdout_evaluated": false,
+  "analysis": "Accounting decomposition and observed target residuals; not causal return attribution",
+  "cases": {
+    "V": {
+      "pnl_bridge": {
+        "net_pnl": "24560.12",
+        "trade_and_ending_value": "-119692.57",
+        "paid_dividends": "158899.68",
+        "fractional_cash": "133.44",
+        "other_cash": "0.00",
+        "ending_receivables": "0.00",
+        "paid_fees": "14780.43",
+        "net_pnl_plus_recorded_fees": "39340.55"
+      },
+      "target_diagnostics": {
+        "counts": {
+          "days_above_target_count": 55,
+          "days_with_non_target_holdings": 118,
+          "non_target_holding_days": 118,
+          "max_positions": 31,
+          "mean_daily_cash_percent": "1.8116"
+        },
+        "non_target_holding_day_tags": {
+          "PLANNING:INACTIVE": 37,
+          "EXECUTION:LIMIT_DOWN_CLOSE": 22,
+          "EXECUTION:SUSPENDED": 38,
+          "OVERNIGHT_SHARE_ACTION_AFTER_SIZING": 21
+        }
+      }
+    },
+    "R30": {
+      "pnl_bridge": {
+        "net_pnl": "376424.76",
+        "trade_and_ending_value": "340385.28",
+        "paid_dividends": "42346.30",
+        "fractional_cash": "40.04",
+        "other_cash": "0.00",
+        "ending_receivables": "0.00",
+        "paid_fees": "6346.86",
+        "net_pnl_plus_recorded_fees": "382771.62"
+      },
+      "target_diagnostics": {
+        "counts": {
+          "days_above_target_count": 0,
+          "days_with_non_target_holdings": 0,
+          "non_target_holding_days": 0,
+          "max_positions": 30,
+          "mean_daily_cash_percent": "0.7816"
+        },
+        "non_target_holding_day_tags": {}
+      }
+    }
+  },
+  "R30_minus_V": {
+    "net_pnl": "351864.64",
+    "trade_and_ending_value": "460077.85",
+    "paid_dividends": "-116553.38",
+    "fractional_cash": "-93.40",
+    "other_cash": "0.00",
+    "ending_receivables": "0.00",
+    "paid_fees": "-8433.57",
+    "net_pnl_plus_recorded_fees": "343431.07"
+  },
+  "observed_paid_fee_contribution_to_gap": "8433.57",
+  "status": "RECONCILED_AND_OBSERVED_RESIDUALS_EXPLAINED",
+  "private_details_sha256": "38dc9f7cb58698fc20b19fbdebab14d3edf996b52b605b65eefa0255b34bd4b3"
+}

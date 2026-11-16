@@ -78,3 +78,5 @@ python examples/integrate_value_strategy.py --root $valueDbRoot --strategy-root 
 现金分红按输入税前额处理，未模拟个人递延红利税；合成日线盘口、整 Bar 事后容量和碎股现金均为模型假设。因此这些指标不是个人税后实盘绩效。
 
 接入和账户路径已完成，结果冻结为 V 执行基线。后续策略改进应在上游登记新假设并独立评价；当前没有因 V 收益偏低而修改执行核、费用或最终留出边界的理由。
+
+后续[冻结结果诊断](value-strategy-diagnostics.md)列出利润会计桥、非目标持仓原因及隔夜送转后的固定数量残仓，不修改本次执行口径。
