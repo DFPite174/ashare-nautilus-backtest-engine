@@ -28,6 +28,8 @@ python examples/regular_backtest.py --bars examples/data/bars_minute.csv --frequ
 
 已有本地 Tushare 湖时，可运行[真实数据候选闭环](docs/research-workflow-validation.md)：周频目标 → 实际账户规划 → 成交与约束 → 下次调仓反馈，附同池基准、容量/滑点压力及独立预期。该样例用于工程验收，股票池与数据边界在报告中列明。
 
+2.7.0 增加按意图的执行结果与未成交数量、公共完整结果比较，以及三次新进程测量命令，见[研究交付与周转成本](docs/research-delivery-validation.md)。
+
 ## 最小接口
 
 ```python

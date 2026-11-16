@@ -103,7 +103,10 @@ assert result.native_cash==D(100000) and not result.fills
 print('RECOVERED')
 """
     root=Path(__file__).resolve().parents[1]
-    bootstrap="import sys;sys.path[:0]="+repr([str(root),str(root/'tests')])+";"+code
+    package=Path(sys.modules['engine'].__file__).resolve()
+    bootstrap=("import sys;sys.path[:0]="+repr([str(package.parents[1]),str(root/'tests')])+";"
+        "from pathlib import Path;import engine;assert Path(engine.__file__).resolve()==Path("+
+        repr(str(package))+").resolve();"+code)
     child=subprocess.run([sys.executable,'-B','-X','utf8','-c',bootstrap],capture_output=True,text=True,encoding='utf-8',timeout=30)
     output=child.stdout+child.stderr
     assert child.returncode==0,output

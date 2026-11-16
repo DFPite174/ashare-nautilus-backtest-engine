@@ -8,7 +8,9 @@ from types import SimpleNamespace
 
 import pytest
 
-_spec = importlib.util.spec_from_file_location("intent_contract_under_test", Path(__file__).parents[1] / "engine" / "intents.py")
+_package_dir = (Path(sys.modules['engine'].__file__).parent if 'engine' in sys.modules
+                else Path(__file__).parents[1] / 'engine')
+_spec = importlib.util.spec_from_file_location("intent_contract_under_test", _package_dir / "intents.py")
 _module = importlib.util.module_from_spec(_spec)
 sys.modules[_spec.name] = _module
 _spec.loader.exec_module(_module)

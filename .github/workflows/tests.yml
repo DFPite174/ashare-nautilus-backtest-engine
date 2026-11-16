@@ -34,3 +34,11 @@ jobs:
           Push-Location $env:RUNNER_TEMP
           python -c "from engine.split_guard import load_bridge; load_bridge(); print('Installed native bridge verified')"
           Pop-Location
+      - name: Test installed wheel outside checkout
+        shell: pwsh
+        run: |
+          Push-Location $env:RUNNER_TEMP
+          python -c "import os,sys; from pathlib import Path; import engine; root=Path(os.environ['GITHUB_WORKSPACE']).resolve(); assert not Path(engine.__file__).resolve().is_relative_to(root), engine.__file__; sys.path.append(str(root)); import pytest; raise SystemExit(pytest.main([str(root/'tests'),'-q','--basetemp',str(Path.cwd()/'wheel-tests')]))"
+          $auditExit = $LASTEXITCODE
+          Pop-Location
+          if ($auditExit -ne 0) { exit $auditExit }

@@ -10,7 +10,7 @@ import sys
 import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from engine import (OrderIntent, TimedOrderIntent, compare_backtests, prepare_backtest,
+from engine import (OrderIntent, TimedOrderIntent, compare_complete_backtests, prepare_backtest,
                     prepare_order_tape, run_order_tape, run_prepared_backtest)
 from engine.backtest import at
 from engine.tushare_lake import load_tushare_lake, parse_day
@@ -29,19 +29,7 @@ def build_entries(prepared, width):
 
 
 def compare_complete(reference, candidate):
-    left = reference.to_dict() if hasattr(reference, 'to_dict') else reference
-    right = candidate.to_dict() if hasattr(candidate, 'to_dict') else candidate
-    business = compare_backtests(left, right)
-    def ordered(rows):
-        return sorted(rows, key=lambda row: json.dumps(row, sort_keys=True, ensure_ascii=False))
-    def orders(value):
-        return ordered([{k: v for k, v in row.items() if k != 'id'} for row in value['orders']])
-    report = dict(business=business, orders_equal=orders(left) == orders(right),
-                  pending_equal=left['pending_intents'] == right['pending_intents'],
-                  journal_equal=ordered(left['account_journal']) == ordered(right['account_journal']))
-    report['equal'] = (business['equal_within_compared_fields'] and report['orders_equal']
-                       and report['pending_equal'] and report['journal_equal'])
-    return report
+    return compare_complete_backtests(reference, candidate)
 
 
 def _peak_mib():

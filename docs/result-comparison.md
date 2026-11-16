@@ -31,4 +31,19 @@ assert report['equal_within_compared_fields']
 
 2.6.0 将原生模拟申报保护阈值写入 `manifest.config.native_order_submit_rate`。任一侧声明该字段就检查其差异；旧记录缺失按未知处理，不自动补默认值。新旧报告需明确使用 `allow_model_difference=True` 才能在假设不同时继续定位业务差异，并检查 `comparable_model` 和 `assumption_differences`，不能只看字段相等。
 
-本地密集实验的 `compare_complete` 还额外比较按意图关联的订单终态、期末未执行意图及完整权益事件；这是实验验收补充，不改变本接口的比较范围。
+## 完整业务比较（2.7.0）
+
+```python
+from engine import compare_complete_backtests
+
+report = compare_complete_backtests(reference_result, candidate_result)
+assert report['business']['comparable_model']
+assert report['equal']
+print(report['orders']['first_difference'])
+```
+
+新接口复用上述输入/模型检查和业务比较，另外要求两侧的 `orders`、`pending_intents`、`account_journal` 均为字典列表，缺失不按空列表处理。返回原业务报告 `business`，三个列表的数量、首差，以及 `orders_equal`、`pending_equal`、`journal_equal` 和汇总 `equal`。
+
+订单忽略随机原生 `id`，其余字段保留；订单和权益事件按规范排序后的多重集比较，重复记录不会被去重，首差的索引是排序后的位置。待执行意图按原队列顺序比较。它不额外证明盘中事件发生顺序，也不比较全部元数据。旧样例 `compare_complete` 转调本公共接口，已有 `compare_backtests` 的含义保持不变。
+
+显式传入 `allow_model_difference=True` 时，`equal` 仍只表示所比较值一致，应同时查看 `business.comparable_model` 和 `business.assumption_differences`；不同模型不能只因值相等而视为等价。

@@ -1,5 +1,6 @@
 """Fixed weekly candidate/account-feedback acceptance, not an alpha claim."""
 import argparse
+from collections import Counter
 from datetime import datetime
 from dataclasses import asdict, replace
 from decimal import Decimal as D, ROUND_HALF_UP
@@ -12,7 +13,7 @@ from zoneinfo import ZoneInfo
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from contracts.models import TargetWeights
-from engine import plan_rebalance, prepare_backtest, run_prepared_backtest
+from engine import plan_rebalance, prepare_backtest, run_prepared_backtest, compare_complete_backtests
 from engine.market_rules import DailyMarketRule
 from engine.tushare_lake import load_tushare_lake
 from examples.validate_tushare_lake import check_cash
@@ -25,6 +26,48 @@ def target_weights(history, filtered):
                       if not filtered or (len(prices) >= 20 and
                           prices[-1] > sum(prices[-20:], D(0)) / 20))
     return {s: 1 / len(eligible) for s in eligible}
+
+
+def execution_outcomes(decisions, result):
+    """Join this workflow's planned intents to observed execution, not inferred causes."""
+    data = result.to_dict() if hasattr(result, 'to_dict') else result
+    rows = {}
+    for decision in decisions:
+        for intent in decision['intents']:
+            identity = intent.get('intent_id')
+            if not identity or identity in rows:
+                raise ValueError('Unique nonempty planned intent_id required')
+            rows[identity] = dict(intent_id=identity, symbol=intent['symbol'], side=intent['side'],
+                decision_time=decision['decision_time'], execution_date=decision['execution_date'],
+                requested_quantity=intent['quantity'], filled_quantity=D(0), fees=D(0),
+                rejection_reasons=[], pending_reasons=[], native_statuses=[])
+    for name in ('fills', 'rejections', 'orders', 'pending_intents'):
+        for event in data[name]:
+            identity = event.get('intent_id')
+            if identity not in rows:
+                raise ValueError(f'Unmatched {name} intent_id: {identity}')
+            row = rows[identity]
+            if name == 'fills':
+                if event['symbol'] != row['symbol'] or event['side'] != row['side']:
+                    raise ValueError(f'Fill identity mismatch: {identity}')
+                row['filled_quantity'] += D(str(event['quantity']))
+                row['fees'] += D(str(event['fee']))
+            elif name == 'rejections':
+                row['rejection_reasons'].append(event['reason'])
+            elif name == 'orders':
+                row['native_statuses'].append(event['status'])
+            else:
+                row['pending_reasons'].append(event['reason'])
+    for row in rows.values():
+        filled, requested = row['filled_quantity'], D(row['requested_quantity'])
+        if not filled.is_finite() or not 0 <= filled <= requested:
+            raise ValueError(f'Invalid filled quantity: {row["intent_id"]}')
+        row['unfilled_quantity'] = str(requested - filled)
+        row['outcome'] = ('FILLED' if filled == requested else 'PARTIALLY_FILLED' if filled else
+                          'REJECTED' if row['rejection_reasons'] else
+                          'PENDING' if row['pending_reasons'] else 'UNFILLED')
+        row['filled_quantity'], row['fees'] = str(filled), str(row['fees'])
+    return list(rows.values())
 
 
 def run_candidate(data, filtered, initial, participation, slippage, prepared=None):
@@ -50,8 +93,9 @@ def run_candidate(data, filtered, initial, participation, slippage, prepared=Non
             sellable=state.sellable, prices=prices, rules=rules,
             valuation_at=state.as_of, decision_at=state.as_of, cash_reserve=D(0),
             receivables=state.receivables)
+        intents = [replace(i, intent_id=f'{day}:{i.symbol}:{i.side}') for i in plan.intents]
         assert all(stamp <= state.as_of for stamp in state.valuation_times.values())
-        decisions.append(dict(date=str(day), execution_date=str(days[index + 1]),
+        decisions.append(dict(date=str(day), decision_time=state.as_of.isoformat(), execution_date=str(days[index + 1]),
             cash=str(state.available_cash), holdings=dict(state.positions),
             sellable=dict(state.sellable), nav=str(state.nav), weights=weights,
             actual_weights={s: str(D(q) * state.valuation_prices[s] / state.nav)
@@ -60,8 +104,8 @@ def run_candidate(data, filtered, initial, participation, slippage, prepared=Non
                                     / state.nav - D(str(weights.get(s, 0)))) for s in symbols},
             valuation_times={s: str(state.valuation_times[s]) for s in symbols},
             allocations=[asdict(a) for a in plan.allocations],
-            intents=[asdict(i) for i in plan.intents]))
-        return [replace(i, intent_id=f'{day}:{i.symbol}:{i.side}') for i in plan.intents]
+            intents=[asdict(i) for i in intents]))
+        return intents
 
     prepared = prepared or prepare_backtest(data.instruments, data.bars, data.rules,
         trading_days=days, corporate_actions=data.corporate_actions)
@@ -107,6 +151,7 @@ def main():
         ('repeat', True, .01, 0)]:
         tick = time.perf_counter()
         result, decisions = run_candidate(data, filtered, D(1000000), participation, slip, prepared)
+        replayed = time.perf_counter()
         assert len(decisions) == 24
         assert not result.pending_intents
         nav = {r['date']: r for r in result.daily_nav}
@@ -138,14 +183,20 @@ def main():
         if name == 'candidate':
             reference = result
         if name == 'repeat':
-            from examples.benchmark_dense_lake import compare_complete
-            assert compare_complete(reference, result)['equal']
-        (args.output / f'{name}.json').write_text(json.dumps(
-            dict(result=serialized, decisions=decisions), default=str, ensure_ascii=False, indent=2), encoding='utf-8')
+            report['repeat_comparison'] = compare_complete_backtests(reference, result)
+            assert report['repeat_comparison']['equal']
+        outcomes = execution_outcomes(decisions, serialized)
+        artifact = args.output / f'{name}.json'
+        artifact.write_text(json.dumps(
+            dict(result=serialized, decisions=decisions, execution_outcomes=outcomes),
+            default=str, ensure_ascii=False, indent=2), encoding='utf-8')
         report['runs'].append(dict(name=name, fills=len(result.fills), rejections=len(result.rejections),
             decisions=len(decisions), journal_entries=len(result.account_journal),
             independently_expected_dividends=expected_dividends,
+            execution_outcomes=dict(Counter(row['outcome'] for row in outcomes)),
             manifest=result.manifest,
+            artifact_sha256=hashlib.sha256(artifact.read_bytes()).hexdigest(),
+            replay_seconds=replayed-tick,
             final_equity=result.daily_nav[-1]['total_equity'], seconds=time.perf_counter()-tick,
             rejection_reasons=sorted({r['reason'] for r in result.rejections})))
         print(name, {k: v for k, v in report['runs'][-1].items() if k != 'manifest'}, flush=True)

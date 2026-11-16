@@ -1,0 +1,466 @@
+{
+  "status": "ENGINEERING_ACCEPTANCE_NOT_ALPHA",
+  "snapshot": {
+    "schema_version": 1,
+    "source": "local-tushare-parquet",
+    "source_files_sha256": {
+      "lake/meta/stock_basic.parquet": "b5ef50993877d27ea09f9b1d4e50ae412403f7bf64d1ace9375f4aab3075b13e",
+      "lake/meta/trade_cal.parquet": "cbcefff493a287fa6c75b81c93fa3c71931b7764823109e81b9582985e22127c",
+      "lake/market/daily/year=2025/daily_2025.parquet": "9043435012898fe9573a00714c4bcadc276a88ad8c2764c6eddb0f58332be547",
+      "lake/market/stk_limit/year=2025/stk_limit_2025.parquet": "0a8ce11bd40a3c7a601033e429043cb8ac29345475bc9f706241aedc9c2da28f",
+      "lake/market/suspend_d/year=2025/suspend_d_2025.parquet": "816cb672a51f860addcc0d223500237013e0bdd908397d459dd5850a218c0ea8",
+      "lake/actions/dividend.parquet": "cb9339526456cee9ab0b33ddba4ed7646b9e014f6e25ebe3434b1cb2309e43c2"
+    },
+    "historical_vintage_pit": false,
+    "price_adjustment": "raw",
+    "volume_unit": "shares",
+    "security_universe": "explicit symbols; current master listing date only",
+    "deduplicated_actions": 1,
+    "excluded_unimplemented_actions": 223,
+    "partial_suspension_policy": "DAY_BLOCKED",
+    "snapshot_id": "7be48f269e1fd4bfc65c1319be5e9da22754bf7e42f240ae222a200ab7e7f7c8"
+  },
+  "strategy_source": "user-authorized fixed local candidate; not a ResearchPod live-model output",
+  "source_sha256": "beeb2e826eebd259c0a667ef1e5fe9f51f0d8eefb41dd362ea2f746af851b3b7",
+  "admission": {
+    "historical_universe": false,
+    "historical_vintage_pit": false,
+    "price": "raw",
+    "volume": "shares",
+    "signal": "closed bars only; weekly MA20",
+    "universe": "explicit event-coverage pool; not historical market selection",
+    "model": "O-H-L-C synthetic book; ex-post bar volume; not observed L2",
+    "unfilled": "one submission; no chase; replan from actual account next fifth session",
+    "blocked_claims": [
+      "investment effectiveness",
+      "all-market unbiased selection",
+      "strict vintage PIT",
+      "observed intrabar execution",
+      "live readiness"
+    ]
+  },
+  "counts": {
+    "bars": 459,
+    "sessions": 117,
+    "actions": 2
+  },
+  "runs": [
+    {
+      "name": "candidate",
+      "fills": 45,
+      "rejections": 2,
+      "decisions": 24,
+      "journal_entries": 2,
+      "independently_expected_dividends": {
+        "000001.SZ": "11149.60",
+        "600519.SH": "0.00"
+      },
+      "execution_outcomes": {
+        "FILLED": 45,
+        "REJECTED": 2
+      },
+      "manifest": {
+        "schema_version": 1,
+        "input_sha256": "c00228b64ce266640fabc44ef9338eeb67a362034b9388c0a502f82d5d719b12",
+        "data_snapshot_id": "7be48f269e1fd4bfc65c1319be5e9da22754bf7e42f240ae222a200ab7e7f7c8",
+        "strategy_id": "weekly-ma20",
+        "strategy_source_sha256": "cd67033e6d84094c5c41ca81c2c66819b38877deaa8e507ebc228c7387efffdb",
+        "strategy_params": {
+          "policy": "one submission; no chase",
+          "rebalance_sessions": 5,
+          "window": 20
+        },
+        "code_commit": "e6f2ec048839657290344cccf4e2cfd8792ed479",
+        "source_sha256": "6d142da612813ffa0bc059f25c696727d1a0173649168cf54e1ba5da5dd7f96a",
+        "environment": {
+          "python": "3.12.10",
+          "platform": "Windows-11-10.0.26200-SP0",
+          "nautilus_trader": "1.231.0",
+          "pydantic": "2.14.1",
+          "numpy": "2.2.6",
+          "pandas": "2.3.3",
+          "pyarrow": "26.0.0"
+        },
+        "config": {
+          "data_delivery": "full",
+          "execution_model": "bar-synthetic-l2-v1",
+          "execution_policy": "same-open-sell-before-buy-v1",
+          "fee_schedules": {
+            "f83f1448debcaba210d91ae3085997a168a0da619d77c0260531dc00446fee46": {
+              "2025-01-02": {
+                "commission_rate": "0.0003",
+                "min_commission": "5",
+                "stamp_duty_rate": "0.0005",
+                "transfer_fee_rate": "0.00001"
+              }
+            }
+          },
+          "initial_cash": "1000000",
+          "native_order_submit_rate": "1000000/00:00:01",
+          "participation_rate": "0.01",
+          "slippage_bps": "0",
+          "symbol_fee_policy": {
+            "000001.SZ": "f83f1448debcaba210d91ae3085997a168a0da619d77c0260531dc00446fee46",
+            "002128.SZ": "f83f1448debcaba210d91ae3085997a168a0da619d77c0260531dc00446fee46",
+            "600000.SH": "f83f1448debcaba210d91ae3085997a168a0da619d77c0260531dc00446fee46",
+            "600519.SH": "f83f1448debcaba210d91ae3085997a168a0da619d77c0260531dc00446fee46"
+          }
+        },
+        "run_sha256": "d05b18455a7f09cb90f37000ebefcb1de0a73470958a73872f3365efe95d6665"
+      },
+      "artifact_sha256": "f206d2e1ccea42464030d56c80e6b86fcd1bac7fa65f3b12ca2e87c98c666b43",
+      "replay_seconds": 0.7741059000254609,
+      "final_equity": "1153479.230",
+      "seconds": 0.7881982999970205,
+      "rejection_reasons": [
+        "INSUFFICIENT_CASH_WITH_FEES"
+      ]
+    },
+    {
+      "name": "benchmark",
+      "fills": 50,
+      "rejections": 0,
+      "decisions": 24,
+      "journal_entries": 2,
+      "independently_expected_dividends": {
+        "000001.SZ": "8289.80",
+        "600519.SH": "2767.30"
+      },
+      "execution_outcomes": {
+        "FILLED": 50
+      },
+      "manifest": {
+        "schema_version": 1,
+        "input_sha256": "c00228b64ce266640fabc44ef9338eeb67a362034b9388c0a502f82d5d719b12",
+        "data_snapshot_id": "7be48f269e1fd4bfc65c1319be5e9da22754bf7e42f240ae222a200ab7e7f7c8",
+        "strategy_id": "weekly-equal-weight",
+        "strategy_source_sha256": "cd67033e6d84094c5c41ca81c2c66819b38877deaa8e507ebc228c7387efffdb",
+        "strategy_params": {
+          "policy": "one submission; no chase",
+          "rebalance_sessions": 5,
+          "window": 20
+        },
+        "code_commit": "e6f2ec048839657290344cccf4e2cfd8792ed479",
+        "source_sha256": "6d142da612813ffa0bc059f25c696727d1a0173649168cf54e1ba5da5dd7f96a",
+        "environment": {
+          "python": "3.12.10",
+          "platform": "Windows-11-10.0.26200-SP0",
+          "nautilus_trader": "1.231.0",
+          "pydantic": "2.14.1",
+          "numpy": "2.2.6",
+          "pandas": "2.3.3",
+          "pyarrow": "26.0.0"
+        },
+        "config": {
+          "data_delivery": "full",
+          "execution_model": "bar-synthetic-l2-v1",
+          "execution_policy": "same-open-sell-before-buy-v1",
+          "fee_schedules": {
+            "f83f1448debcaba210d91ae3085997a168a0da619d77c0260531dc00446fee46": {
+              "2025-01-02": {
+                "commission_rate": "0.0003",
+                "min_commission": "5",
+                "stamp_duty_rate": "0.0005",
+                "transfer_fee_rate": "0.00001"
+              }
+            }
+          },
+          "initial_cash": "1000000",
+          "native_order_submit_rate": "1000000/00:00:01",
+          "participation_rate": "0.01",
+          "slippage_bps": "0",
+          "symbol_fee_policy": {
+            "000001.SZ": "f83f1448debcaba210d91ae3085997a168a0da619d77c0260531dc00446fee46",
+            "002128.SZ": "f83f1448debcaba210d91ae3085997a168a0da619d77c0260531dc00446fee46",
+            "600000.SH": "f83f1448debcaba210d91ae3085997a168a0da619d77c0260531dc00446fee46",
+            "600519.SH": "f83f1448debcaba210d91ae3085997a168a0da619d77c0260531dc00446fee46"
+          }
+        },
+        "run_sha256": "50e02e552533b323fd6e6a80523b98e444bb7ccbc56d7b56ae149442d5e3a076"
+      },
+      "artifact_sha256": "2ede213b5eff17e518b3b9847987bc9c6cd28b68ef980677d4d4257f747a0f39",
+      "replay_seconds": 0.1712305000401102,
+      "final_equity": "1111504.640",
+      "seconds": 0.18283050000900403,
+      "rejection_reasons": []
+    },
+    {
+      "name": "low-capacity",
+      "fills": 0,
+      "rejections": 47,
+      "decisions": 24,
+      "journal_entries": 2,
+      "independently_expected_dividends": {
+        "000001.SZ": "0.00",
+        "600519.SH": "0.00"
+      },
+      "execution_outcomes": {
+        "REJECTED": 47
+      },
+      "manifest": {
+        "schema_version": 1,
+        "input_sha256": "c00228b64ce266640fabc44ef9338eeb67a362034b9388c0a502f82d5d719b12",
+        "data_snapshot_id": "7be48f269e1fd4bfc65c1319be5e9da22754bf7e42f240ae222a200ab7e7f7c8",
+        "strategy_id": "weekly-ma20",
+        "strategy_source_sha256": "cd67033e6d84094c5c41ca81c2c66819b38877deaa8e507ebc228c7387efffdb",
+        "strategy_params": {
+          "policy": "one submission; no chase",
+          "rebalance_sessions": 5,
+          "window": 20
+        },
+        "code_commit": "e6f2ec048839657290344cccf4e2cfd8792ed479",
+        "source_sha256": "6d142da612813ffa0bc059f25c696727d1a0173649168cf54e1ba5da5dd7f96a",
+        "environment": {
+          "python": "3.12.10",
+          "platform": "Windows-11-10.0.26200-SP0",
+          "nautilus_trader": "1.231.0",
+          "pydantic": "2.14.1",
+          "numpy": "2.2.6",
+          "pandas": "2.3.3",
+          "pyarrow": "26.0.0"
+        },
+        "config": {
+          "data_delivery": "full",
+          "execution_model": "bar-synthetic-l2-v1",
+          "execution_policy": "same-open-sell-before-buy-v1",
+          "fee_schedules": {
+            "f83f1448debcaba210d91ae3085997a168a0da619d77c0260531dc00446fee46": {
+              "2025-01-02": {
+                "commission_rate": "0.0003",
+                "min_commission": "5",
+                "stamp_duty_rate": "0.0005",
+                "transfer_fee_rate": "0.00001"
+              }
+            }
+          },
+          "initial_cash": "1000000",
+          "native_order_submit_rate": "1000000/00:00:01",
+          "participation_rate": "1e-06",
+          "slippage_bps": "0",
+          "symbol_fee_policy": {
+            "000001.SZ": "f83f1448debcaba210d91ae3085997a168a0da619d77c0260531dc00446fee46",
+            "002128.SZ": "f83f1448debcaba210d91ae3085997a168a0da619d77c0260531dc00446fee46",
+            "600000.SH": "f83f1448debcaba210d91ae3085997a168a0da619d77c0260531dc00446fee46",
+            "600519.SH": "f83f1448debcaba210d91ae3085997a168a0da619d77c0260531dc00446fee46"
+          }
+        },
+        "run_sha256": "1bac6005b76569792668359638446ce923a840c18cd1270493278a5953540daa"
+      },
+      "artifact_sha256": "3f297fe8e3dd303fdb18f5b423cedef0001bea9570ceca176f1a7a9a125f07c7",
+      "replay_seconds": 0.12458830000832677,
+      "final_equity": "1000000.00",
+      "seconds": 0.13630960002774373,
+      "rejection_reasons": [
+        "PARTICIPATION_LIMIT"
+      ]
+    },
+    {
+      "name": "adverse-slippage",
+      "fills": 43,
+      "rejections": 4,
+      "decisions": 24,
+      "journal_entries": 2,
+      "independently_expected_dividends": {
+        "000001.SZ": "10932.40",
+        "600519.SH": "0.00"
+      },
+      "execution_outcomes": {
+        "FILLED": 43,
+        "REJECTED": 4
+      },
+      "manifest": {
+        "schema_version": 1,
+        "input_sha256": "c00228b64ce266640fabc44ef9338eeb67a362034b9388c0a502f82d5d719b12",
+        "data_snapshot_id": "7be48f269e1fd4bfc65c1319be5e9da22754bf7e42f240ae222a200ab7e7f7c8",
+        "strategy_id": "weekly-ma20",
+        "strategy_source_sha256": "cd67033e6d84094c5c41ca81c2c66819b38877deaa8e507ebc228c7387efffdb",
+        "strategy_params": {
+          "policy": "one submission; no chase",
+          "rebalance_sessions": 5,
+          "window": 20
+        },
+        "code_commit": "e6f2ec048839657290344cccf4e2cfd8792ed479",
+        "source_sha256": "6d142da612813ffa0bc059f25c696727d1a0173649168cf54e1ba5da5dd7f96a",
+        "environment": {
+          "python": "3.12.10",
+          "platform": "Windows-11-10.0.26200-SP0",
+          "nautilus_trader": "1.231.0",
+          "pydantic": "2.14.1",
+          "numpy": "2.2.6",
+          "pandas": "2.3.3",
+          "pyarrow": "26.0.0"
+        },
+        "config": {
+          "data_delivery": "full",
+          "execution_model": "bar-synthetic-l2-v1",
+          "execution_policy": "same-open-sell-before-buy-v1",
+          "fee_schedules": {
+            "f83f1448debcaba210d91ae3085997a168a0da619d77c0260531dc00446fee46": {
+              "2025-01-02": {
+                "commission_rate": "0.0003",
+                "min_commission": "5",
+                "stamp_duty_rate": "0.0005",
+                "transfer_fee_rate": "0.00001"
+              }
+            }
+          },
+          "initial_cash": "1000000",
+          "native_order_submit_rate": "1000000/00:00:01",
+          "participation_rate": "0.01",
+          "slippage_bps": "10",
+          "symbol_fee_policy": {
+            "000001.SZ": "f83f1448debcaba210d91ae3085997a168a0da619d77c0260531dc00446fee46",
+            "002128.SZ": "f83f1448debcaba210d91ae3085997a168a0da619d77c0260531dc00446fee46",
+            "600000.SH": "f83f1448debcaba210d91ae3085997a168a0da619d77c0260531dc00446fee46",
+            "600519.SH": "f83f1448debcaba210d91ae3085997a168a0da619d77c0260531dc00446fee46"
+          }
+        },
+        "run_sha256": "f5860f99a33af3c01df5b3b26da163ff5965a715e66a4ef902bce257c8b706e7"
+      },
+      "artifact_sha256": "706ff7fd220018354f165c011132c05d76eba7e7b64ed362d2c47a09113026ca",
+      "replay_seconds": 0.15719690005062148,
+      "final_equity": "1117090.390",
+      "seconds": 0.17143220000434667,
+      "rejection_reasons": [
+        "INSUFFICIENT_CASH_WITH_FEES"
+      ]
+    },
+    {
+      "name": "repeat",
+      "fills": 45,
+      "rejections": 2,
+      "decisions": 24,
+      "journal_entries": 2,
+      "independently_expected_dividends": {
+        "000001.SZ": "11149.60",
+        "600519.SH": "0.00"
+      },
+      "execution_outcomes": {
+        "FILLED": 45,
+        "REJECTED": 2
+      },
+      "manifest": {
+        "schema_version": 1,
+        "input_sha256": "c00228b64ce266640fabc44ef9338eeb67a362034b9388c0a502f82d5d719b12",
+        "data_snapshot_id": "7be48f269e1fd4bfc65c1319be5e9da22754bf7e42f240ae222a200ab7e7f7c8",
+        "strategy_id": "weekly-ma20",
+        "strategy_source_sha256": "cd67033e6d84094c5c41ca81c2c66819b38877deaa8e507ebc228c7387efffdb",
+        "strategy_params": {
+          "policy": "one submission; no chase",
+          "rebalance_sessions": 5,
+          "window": 20
+        },
+        "code_commit": "e6f2ec048839657290344cccf4e2cfd8792ed479",
+        "source_sha256": "6d142da612813ffa0bc059f25c696727d1a0173649168cf54e1ba5da5dd7f96a",
+        "environment": {
+          "python": "3.12.10",
+          "platform": "Windows-11-10.0.26200-SP0",
+          "nautilus_trader": "1.231.0",
+          "pydantic": "2.14.1",
+          "numpy": "2.2.6",
+          "pandas": "2.3.3",
+          "pyarrow": "26.0.0"
+        },
+        "config": {
+          "data_delivery": "full",
+          "execution_model": "bar-synthetic-l2-v1",
+          "execution_policy": "same-open-sell-before-buy-v1",
+          "fee_schedules": {
+            "f83f1448debcaba210d91ae3085997a168a0da619d77c0260531dc00446fee46": {
+              "2025-01-02": {
+                "commission_rate": "0.0003",
+                "min_commission": "5",
+                "stamp_duty_rate": "0.0005",
+                "transfer_fee_rate": "0.00001"
+              }
+            }
+          },
+          "initial_cash": "1000000",
+          "native_order_submit_rate": "1000000/00:00:01",
+          "participation_rate": "0.01",
+          "slippage_bps": "0",
+          "symbol_fee_policy": {
+            "000001.SZ": "f83f1448debcaba210d91ae3085997a168a0da619d77c0260531dc00446fee46",
+            "002128.SZ": "f83f1448debcaba210d91ae3085997a168a0da619d77c0260531dc00446fee46",
+            "600000.SH": "f83f1448debcaba210d91ae3085997a168a0da619d77c0260531dc00446fee46",
+            "600519.SH": "f83f1448debcaba210d91ae3085997a168a0da619d77c0260531dc00446fee46"
+          }
+        },
+        "run_sha256": "d05b18455a7f09cb90f37000ebefcb1de0a73470958a73872f3365efe95d6665"
+      },
+      "artifact_sha256": "f206d2e1ccea42464030d56c80e6b86fcd1bac7fa65f3b12ca2e87c98c666b43",
+      "replay_seconds": 0.16719810001086444,
+      "final_equity": "1153479.230",
+      "seconds": 0.1859311999869533,
+      "rejection_reasons": [
+        "INSUFFICIENT_CASH_WITH_FEES"
+      ]
+    }
+  ],
+  "repeat_comparison": {
+    "business": {
+      "comparable_model": true,
+      "assumption_differences": {},
+      "schema_difference": null,
+      "fills": {
+        "reference_count": 45,
+        "candidate_count": 45,
+        "count_difference": 0,
+        "first_difference": null
+      },
+      "rejections": {
+        "reference_count": 2,
+        "candidate_count": 2,
+        "count_difference": 0,
+        "first_difference": null
+      },
+      "daily_nav": {
+        "reference_count": 117,
+        "candidate_count": 117,
+        "count_difference": 0,
+        "first_difference": null
+      },
+      "final_cash_differences": {},
+      "final_position_differences": {},
+      "equal_within_compared_fields": true
+    },
+    "orders": {
+      "reference_count": 45,
+      "candidate_count": 45,
+      "count_difference": 0,
+      "first_difference": null
+    },
+    "pending_intents": {
+      "reference_count": 0,
+      "candidate_count": 0,
+      "count_difference": 0,
+      "first_difference": null
+    },
+    "account_journal": {
+      "reference_count": 2,
+      "candidate_count": 2,
+      "count_difference": 0,
+      "first_difference": null
+    },
+    "orders_equal": true,
+    "pending_equal": true,
+    "journal_equal": true,
+    "equal": true
+  },
+  "timing": {
+    "load_seconds": 0.14353409997420385,
+    "prepare_seconds": 0.010673000011593103,
+    "total_seconds": 1.619509799988009,
+    "scope": "load through five replay/result exports; excludes interpreter/import startup"
+  },
+  "checks": [
+    "native/gateway/ledger daily reconciliation",
+    "independent fill cash arithmetic",
+    "record-date quantity times declared real dividend",
+    "nine halted holding sessions without fills",
+    "capacity rejection",
+    "actual cash shortage",
+    "fresh-account repeat complete equality"
+  ],
+  "path_sensitivity": "This use case submits IOC market intents only; every zero-slippage fill was independently checked against its raw next-session opening price. No resting-limit path comparison or true intrabar ordering is claimed. Ex-post volume remains an assumption."
+}

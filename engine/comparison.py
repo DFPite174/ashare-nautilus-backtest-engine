@@ -1,5 +1,6 @@
 """Exact differential checks for native BacktestResult business fields."""
 from decimal import Decimal
+import json
 
 
 _CONFIG = ('execution_model', 'execution_policy', 'initial_cash', 'participation_rate',
@@ -102,4 +103,35 @@ def compare_backtests(reference, candidate, *, allow_model_difference=False):
     report['equal_within_compared_fields'] = not (
         any(report[name]['first_difference'] is not None for name in ('fills', 'rejections', 'daily_nav'))
         or report['final_cash_differences'] or report['final_position_differences'])
+    return report
+
+
+def compare_complete_backtests(reference, candidate, *, allow_model_difference=False):
+    """Add orders, pending intents and account events to the existing comparison.
+
+    Orders/events compare as multisets, pending intents retain queue order.
+    Native order IDs are ignored; quantities, status and intent IDs are retained.
+    ``equal`` describes compared values; consult ``business.comparable_model``
+    when explicitly allowing different models. This is not a correctness oracle.
+    """
+    left, right = _result(reference), _result(candidate)
+    business = compare_backtests(left, right, allow_model_difference=allow_model_difference)
+    report = dict(business=business)
+    for name in ('orders', 'pending_intents', 'account_journal'):
+        rows = []
+        for value in (left, right):
+            _require(value, (name,), 'result')
+            if not isinstance(value[name], list) or any(not isinstance(r, dict) for r in value[name]):
+                raise ValueError(f'{name} must be a list of dictionaries')
+            selected = [{k: v for k, v in row.items() if name != 'orders' or k != 'id'}
+                        for row in value[name]]
+            if name != 'pending_intents':
+                selected.sort(key=lambda row: json.dumps(row, sort_keys=True, ensure_ascii=False))
+            rows.append(selected)
+        report[name] = _rows(*rows)
+    report.update(orders_equal=report['orders']['first_difference'] is None,
+                  pending_equal=report['pending_intents']['first_difference'] is None,
+                  journal_equal=report['account_journal']['first_difference'] is None)
+    report['equal'] = (business['equal_within_compared_fields'] and report['orders_equal']
+                       and report['pending_equal'] and report['journal_equal'])
     return report

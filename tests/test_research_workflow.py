@@ -1,5 +1,7 @@
 from decimal import Decimal as D
 from dataclasses import replace
+from copy import deepcopy
+import pytest
 
 from examples.research_workflow import target_weights, run_candidate
 from engine.tushare_lake import LakeInputs
@@ -52,3 +54,25 @@ def test_independent_cash_fee_dividend_and_next_session_oracle():
     assert result.native_cash == result.ledger_cash == D('2089.48')
     assert sum(D(r['amount']) for r in result.account_journal) == 100
     assert result.positions['600000.SH'] == 0
+
+
+def test_outcomes_link_partial_rejected_and_end_of_data_without_inventing_reasons():
+    from examples.research_workflow import execution_outcomes
+    decisions = [dict(date='2025-01-02', decision_time='2025-01-02T15:00:00+08:00',
+        execution_date='2025-01-03', intents=[dict(intent_id=s, symbol=s, side='BUY', quantity=100)
+                                           for s in ('partial', 'rejected', 'pending')])]
+    result = dict(fills=[dict(intent_id='partial', symbol='partial', side='BUY', quantity='50', fee='5')],
+        rejections=[dict(intent_id='rejected', reason='INSUFFICIENT_CASH_WITH_FEES')],
+        orders=[dict(intent_id='partial', status='CANCELED')],
+        pending_intents=[dict(intent_id='pending', reason='END_OF_DATA')])
+    rows = execution_outcomes(decisions, result)
+    assert [r['outcome'] for r in rows] == ['PARTIALLY_FILLED', 'REJECTED', 'PENDING']
+    assert rows[0]['unfilled_quantity'] == '50'
+    assert rows[0]['rejection_reasons'] == []
+    assert rows[1]['rejection_reasons'] == ['INSUFFICIENT_CASH_WITH_FEES']
+    assert rows[2]['pending_reasons'] == ['END_OF_DATA']
+    for change in ('unknown', 'overfill'):
+        broken = deepcopy(result)
+        broken['fills'][0]['intent_id' if change == 'unknown' else 'quantity'] = 'unknown' if change == 'unknown' else '101'
+        with pytest.raises(ValueError):
+            execution_outcomes(decisions, broken)

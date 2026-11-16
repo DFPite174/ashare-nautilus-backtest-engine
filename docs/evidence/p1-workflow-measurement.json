@@ -1,0 +1,66 @@
+{
+  "status": "PASS",
+  "trials": [
+    {
+      "trial": 1,
+      "process_seconds": 3.36749289999716,
+      "peak_working_set_mib": 376.6171875,
+      "stages": {
+        "load_seconds": 0.14353409997420385,
+        "prepare_seconds": 0.010673000011593103,
+        "total_seconds": 1.619509799988009,
+        "scope": "load through five replay/result exports; excludes interpreter/import startup"
+      },
+      "replay_seconds": 1.3943197001353838,
+      "snapshot_id": "7be48f269e1fd4bfc65c1319be5e9da22754bf7e42f240ae222a200ab7e7f7c8"
+    },
+    {
+      "trial": 2,
+      "process_seconds": 3.3921765999984927,
+      "peak_working_set_mib": 382.05078125,
+      "stages": {
+        "load_seconds": 0.17878270003711805,
+        "prepare_seconds": 0.010924900008831173,
+        "total_seconds": 1.6031958000385202,
+        "scope": "load through five replay/result exports; excludes interpreter/import startup"
+      },
+      "replay_seconds": 1.346849400026258,
+      "snapshot_id": "7be48f269e1fd4bfc65c1319be5e9da22754bf7e42f240ae222a200ab7e7f7c8"
+    },
+    {
+      "trial": 3,
+      "process_seconds": 3.4503526999615133,
+      "peak_working_set_mib": 373.453125,
+      "stages": {
+        "load_seconds": 0.18097340001259,
+        "prepare_seconds": 0.013323899998795241,
+        "total_seconds": 1.7199892000062391,
+        "scope": "load through five replay/result exports; excludes interpreter/import startup"
+      },
+      "replay_seconds": 1.456537100020796,
+      "snapshot_id": "7be48f269e1fd4bfc65c1319be5e9da22754bf7e42f240ae222a200ab7e7f7c8"
+    }
+  ],
+  "workflow_sha256": "beeb2e826eebd259c0a667ef1e5fe9f51f0d8eefb41dd362ea2f746af851b3b7",
+  "benchmark_sha256": "66b01a60e1b59b329b94a8d842ee3404892a3a4dd2ec64dfbe99a2b772cd2983",
+  "engine_source_sha256": "6d142da612813ffa0bc059f25c696727d1a0173649168cf54e1ba5da5dd7f96a",
+  "environment": {
+    "python": "3.12.10",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "nautilus_trader": "1.231.0",
+    "pydantic": "2.14.1",
+    "numpy": "2.2.6",
+    "pandas": "2.3.3",
+    "pyarrow": "26.0.0"
+  },
+  "workload": {
+    "bars": 459,
+    "sessions": 117,
+    "actions": 2
+  },
+  "process_seconds_median": 3.3921765999984927,
+  "peak_working_set_mib_max": 382.05078125,
+  "scope": "fresh interpreter/imports, local load, preparation, five replays, validation, exports and peak probe",
+  "cache": "fresh processes; OS file cache not flushed; not disk-cold or five-year/all-market throughput",
+  "correctness": "all five runs complete-equal across three processes; decisions/outcomes equal; artifact hashes verified"
+}

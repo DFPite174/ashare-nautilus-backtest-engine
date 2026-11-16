@@ -1,0 +1,252 @@
+{
+  "candidate": {
+    "business": {
+      "comparable_model": true,
+      "assumption_differences": {},
+      "schema_difference": null,
+      "fills": {
+        "reference_count": 45,
+        "candidate_count": 45,
+        "count_difference": 0,
+        "first_difference": null
+      },
+      "rejections": {
+        "reference_count": 2,
+        "candidate_count": 2,
+        "count_difference": 0,
+        "first_difference": null
+      },
+      "daily_nav": {
+        "reference_count": 117,
+        "candidate_count": 117,
+        "count_difference": 0,
+        "first_difference": null
+      },
+      "final_cash_differences": {},
+      "final_position_differences": {},
+      "equal_within_compared_fields": true
+    },
+    "orders": {
+      "reference_count": 45,
+      "candidate_count": 45,
+      "count_difference": 0,
+      "first_difference": null
+    },
+    "pending_intents": {
+      "reference_count": 0,
+      "candidate_count": 0,
+      "count_difference": 0,
+      "first_difference": null
+    },
+    "account_journal": {
+      "reference_count": 2,
+      "candidate_count": 2,
+      "count_difference": 0,
+      "first_difference": null
+    },
+    "orders_equal": true,
+    "pending_equal": true,
+    "journal_equal": true,
+    "equal": true
+  },
+  "benchmark": {
+    "business": {
+      "comparable_model": true,
+      "assumption_differences": {},
+      "schema_difference": null,
+      "fills": {
+        "reference_count": 50,
+        "candidate_count": 50,
+        "count_difference": 0,
+        "first_difference": null
+      },
+      "rejections": {
+        "reference_count": 0,
+        "candidate_count": 0,
+        "count_difference": 0,
+        "first_difference": null
+      },
+      "daily_nav": {
+        "reference_count": 117,
+        "candidate_count": 117,
+        "count_difference": 0,
+        "first_difference": null
+      },
+      "final_cash_differences": {},
+      "final_position_differences": {},
+      "equal_within_compared_fields": true
+    },
+    "orders": {
+      "reference_count": 50,
+      "candidate_count": 50,
+      "count_difference": 0,
+      "first_difference": null
+    },
+    "pending_intents": {
+      "reference_count": 0,
+      "candidate_count": 0,
+      "count_difference": 0,
+      "first_difference": null
+    },
+    "account_journal": {
+      "reference_count": 2,
+      "candidate_count": 2,
+      "count_difference": 0,
+      "first_difference": null
+    },
+    "orders_equal": true,
+    "pending_equal": true,
+    "journal_equal": true,
+    "equal": true
+  },
+  "low-capacity": {
+    "business": {
+      "comparable_model": true,
+      "assumption_differences": {},
+      "schema_difference": null,
+      "fills": {
+        "reference_count": 0,
+        "candidate_count": 0,
+        "count_difference": 0,
+        "first_difference": null
+      },
+      "rejections": {
+        "reference_count": 47,
+        "candidate_count": 47,
+        "count_difference": 0,
+        "first_difference": null
+      },
+      "daily_nav": {
+        "reference_count": 117,
+        "candidate_count": 117,
+        "count_difference": 0,
+        "first_difference": null
+      },
+      "final_cash_differences": {},
+      "final_position_differences": {},
+      "equal_within_compared_fields": true
+    },
+    "orders": {
+      "reference_count": 0,
+      "candidate_count": 0,
+      "count_difference": 0,
+      "first_difference": null
+    },
+    "pending_intents": {
+      "reference_count": 0,
+      "candidate_count": 0,
+      "count_difference": 0,
+      "first_difference": null
+    },
+    "account_journal": {
+      "reference_count": 2,
+      "candidate_count": 2,
+      "count_difference": 0,
+      "first_difference": null
+    },
+    "orders_equal": true,
+    "pending_equal": true,
+    "journal_equal": true,
+    "equal": true
+  },
+  "adverse-slippage": {
+    "business": {
+      "comparable_model": true,
+      "assumption_differences": {},
+      "schema_difference": null,
+      "fills": {
+        "reference_count": 43,
+        "candidate_count": 43,
+        "count_difference": 0,
+        "first_difference": null
+      },
+      "rejections": {
+        "reference_count": 4,
+        "candidate_count": 4,
+        "count_difference": 0,
+        "first_difference": null
+      },
+      "daily_nav": {
+        "reference_count": 117,
+        "candidate_count": 117,
+        "count_difference": 0,
+        "first_difference": null
+      },
+      "final_cash_differences": {},
+      "final_position_differences": {},
+      "equal_within_compared_fields": true
+    },
+    "orders": {
+      "reference_count": 43,
+      "candidate_count": 43,
+      "count_difference": 0,
+      "first_difference": null
+    },
+    "pending_intents": {
+      "reference_count": 0,
+      "candidate_count": 0,
+      "count_difference": 0,
+      "first_difference": null
+    },
+    "account_journal": {
+      "reference_count": 2,
+      "candidate_count": 2,
+      "count_difference": 0,
+      "first_difference": null
+    },
+    "orders_equal": true,
+    "pending_equal": true,
+    "journal_equal": true,
+    "equal": true
+  },
+  "repeat": {
+    "business": {
+      "comparable_model": true,
+      "assumption_differences": {},
+      "schema_difference": null,
+      "fills": {
+        "reference_count": 45,
+        "candidate_count": 45,
+        "count_difference": 0,
+        "first_difference": null
+      },
+      "rejections": {
+        "reference_count": 2,
+        "candidate_count": 2,
+        "count_difference": 0,
+        "first_difference": null
+      },
+      "daily_nav": {
+        "reference_count": 117,
+        "candidate_count": 117,
+        "count_difference": 0,
+        "first_difference": null
+      },
+      "final_cash_differences": {},
+      "final_position_differences": {},
+      "equal_within_compared_fields": true
+    },
+    "orders": {
+      "reference_count": 45,
+      "candidate_count": 45,
+      "count_difference": 0,
+      "first_difference": null
+    },
+    "pending_intents": {
+      "reference_count": 0,
+      "candidate_count": 0,
+      "count_difference": 0,
+      "first_difference": null
+    },
+    "account_journal": {
+      "reference_count": 2,
+      "candidate_count": 2,
+      "count_difference": 0,
+      "first_difference": null
+    },
+    "orders_equal": true,
+    "pending_equal": true,
+    "journal_equal": true,
+    "equal": true
+  }
+}

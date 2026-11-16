@@ -88,3 +88,34 @@ def test_result_object_to_dict():
         def to_dict(self):
             return result()
     assert compare_backtests(Result(), result())['equal_within_compared_fields']
+
+
+def complete_result():
+    return dict(result(), orders=[dict(id='native', intent_id='001', status='FILLED')],
+                pending_intents=[], account_journal=[])
+
+
+@pytest.mark.parametrize('field', ['orders', 'pending_intents', 'account_journal'])
+def test_complete_comparison_reports_first_extra_difference_without_changing_old_scope(field):
+    from engine import compare_complete_backtests
+    left = complete_result(); right = deepcopy(left)
+    right[field].append({'unexpected': True})
+    assert compare_backtests(left, right)['equal_within_compared_fields']
+    report = compare_complete_backtests(left, right)
+    assert not report['equal']
+    assert report[field]['first_difference'] is not None
+    del right[field]
+    with pytest.raises(ValueError, match=field):
+        compare_complete_backtests(left, right)
+
+
+def test_complete_comparison_ignores_native_ids_and_preserves_model_gate():
+    from engine import compare_complete_backtests
+    left = complete_result(); right = deepcopy(left)
+    right['orders'][0]['id'] = 'random'
+    assert compare_complete_backtests(left, right)['equal']
+    right['manifest']['config']['slippage_bps'] = '10'
+    with pytest.raises(ValueError, match='assumptions'):
+        compare_complete_backtests(left, right)
+    report = compare_complete_backtests(left, right, allow_model_difference=True)
+    assert report['equal'] and not report['business']['comparable_model']
