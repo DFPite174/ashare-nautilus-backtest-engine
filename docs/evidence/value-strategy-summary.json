@@ -1,0 +1,483 @@
+{
+  "status": "PASS_EXECUTION_ADAPTATION_NOT_ALPHA_CERTIFICATION",
+  "holdout_evaluated": false,
+  "historical_vintage_pit": false,
+  "execution_variant": "raw price / next-session open / lots and actual account / 10 bps slippage",
+  "fractional_policy": "cash_in_lieu",
+  "deferred_personal_dividend_tax_modeled": false,
+  "fractional_cash_model": "previous raw close / split ratio; research approximation, not actual fractional allocation",
+  "scope": "Tushare provider-basis validation; not original NAV replication or independent OOS",
+  "runs": [
+    {
+      "name": "V",
+      "fills": 978,
+      "rejections": 8,
+      "decisions": 36,
+      "max_positions": 31,
+      "fractional_cash_events": 3,
+      "fractional_cash_total": "133.44",
+      "rejection_reasons": {
+        "INSUFFICIENT_CASH_WITH_FEES": 3,
+        "LIMIT_DOWN_CLOSE": 1,
+        "LIMIT_UP_CLOSE": 1,
+        "SUSPENDED": 3
+      },
+      "planning_reasons": {
+        "UNITS": 1052,
+        "INACTIVE": 2,
+        "CASH_SHORTAGE": 3
+      },
+      "metrics": {
+        "start": "2021-01-04",
+        "end": "2023-12-29",
+        "sessions": 727,
+        "total_return": 0.024560120000000074,
+        "annualized_return": 0.008445878222697933,
+        "max_drawdown": -0.23790341845974528,
+        "sharpe_zero_rf": 0.14500892601654164
+      },
+      "seconds": 8.966739299998153,
+      "manifest": {
+        "schema_version": 1,
+        "input_sha256": "764ab66a8cdb562995abb9bded49e40ef6c65184ced2c8b85b8a2e06bc064b82",
+        "data_snapshot_id": "1a8af8b986b51f1362e6b41f9f3019aa1027d58d2ccf86310048c58b5c75ccf9",
+        "strategy_id": "value-V-next-open",
+        "strategy_source_sha256": "fa209e3a8dae2a612408cb92ce5630358ca86b89670435eda0c7c7abbd114154",
+        "strategy_params": {
+          "policy": "one submission; no chase; next month actual account feedback",
+          "target_bundle": "eea2c35455f1f4f44920efebe472ae0850470c4047777a78123cbafa7632fb53"
+        },
+        "code_commit": "7bed7086032b5de8d0c3993266c062fe74bd8a02",
+        "source_sha256": "6d142da612813ffa0bc059f25c696727d1a0173649168cf54e1ba5da5dd7f96a",
+        "environment": {
+          "python": "3.12.10",
+          "platform": "Windows-11-10.0.26200-SP0",
+          "nautilus_trader": "1.231.0",
+          "pydantic": "2.14.1",
+          "numpy": "2.2.6",
+          "pandas": "2.3.3",
+          "pyarrow": "26.0.0"
+        },
+        "config": {
+          "data_delivery": "sparse",
+          "execution_model": "bar-synthetic-l2-v1",
+          "execution_policy": "same-open-sell-before-buy-v1",
+          "fee_schedules": {
+            "adc5a4586eea67485a3088052d996e99e522137d72646f1f2fc6d25f67bb6c09": {
+              "2020-12-01": {
+                "commission_rate": "0.0003",
+                "min_commission": "5",
+                "stamp_duty_rate": "0.001",
+                "transfer_fee_rate": "0.00002"
+              },
+              "2022-04-29": {
+                "commission_rate": "0.0003",
+                "min_commission": "5",
+                "stamp_duty_rate": "0.001",
+                "transfer_fee_rate": "0.00001"
+              },
+              "2023-08-28": {
+                "commission_rate": "0.0003",
+                "min_commission": "5",
+                "stamp_duty_rate": "0.0005",
+                "transfer_fee_rate": "0.00001"
+              }
+            }
+          },
+          "initial_cash": "1000000",
+          "native_order_submit_rate": "1000000/00:00:01",
+          "participation_rate": "0.01",
+          "slippage_bps": "10",
+          "symbol_fee_policy_sha256": "432e263a3263c766b146333b1dcbca41c90b04dd404bc68f103dce895248961a"
+        },
+        "run_sha256": "50d22ee5e2354872e310e21e6e1eb7a027a53b71908cca78aee7c9a646fa33eb"
+      },
+      "artifact_sha256": "8e087727b7e5d7270746e47ffe7f98ccb6ba03a62174b5a060880dc2e6df2538"
+    },
+    {
+      "name": "R30",
+      "fills": 708,
+      "rejections": 8,
+      "decisions": 36,
+      "max_positions": 30,
+      "fractional_cash_events": 3,
+      "fractional_cash_total": "40.04",
+      "rejection_reasons": {
+        "INSUFFICIENT_CASH_WITH_FEES": 8
+      },
+      "planning_reasons": {
+        "UNITS": 1011,
+        "CASH_SHORTAGE": 41
+      },
+      "metrics": {
+        "start": "2021-01-04",
+        "end": "2023-12-29",
+        "sessions": 727,
+        "total_return": 0.3764247599999999,
+        "annualized_return": 0.11710956140610751,
+        "max_drawdown": -0.2946755549301586,
+        "sharpe_zero_rf": 0.6531107114825866
+      },
+      "seconds": 9.005543600011151,
+      "manifest": {
+        "schema_version": 1,
+        "input_sha256": "764ab66a8cdb562995abb9bded49e40ef6c65184ced2c8b85b8a2e06bc064b82",
+        "data_snapshot_id": "1a8af8b986b51f1362e6b41f9f3019aa1027d58d2ccf86310048c58b5c75ccf9",
+        "strategy_id": "value-R30-next-open",
+        "strategy_source_sha256": "fa209e3a8dae2a612408cb92ce5630358ca86b89670435eda0c7c7abbd114154",
+        "strategy_params": {
+          "policy": "one submission; no chase; next month actual account feedback",
+          "target_bundle": "eea2c35455f1f4f44920efebe472ae0850470c4047777a78123cbafa7632fb53"
+        },
+        "code_commit": "7bed7086032b5de8d0c3993266c062fe74bd8a02",
+        "source_sha256": "6d142da612813ffa0bc059f25c696727d1a0173649168cf54e1ba5da5dd7f96a",
+        "environment": {
+          "python": "3.12.10",
+          "platform": "Windows-11-10.0.26200-SP0",
+          "nautilus_trader": "1.231.0",
+          "pydantic": "2.14.1",
+          "numpy": "2.2.6",
+          "pandas": "2.3.3",
+          "pyarrow": "26.0.0"
+        },
+        "config": {
+          "data_delivery": "sparse",
+          "execution_model": "bar-synthetic-l2-v1",
+          "execution_policy": "same-open-sell-before-buy-v1",
+          "fee_schedules": {
+            "adc5a4586eea67485a3088052d996e99e522137d72646f1f2fc6d25f67bb6c09": {
+              "2020-12-01": {
+                "commission_rate": "0.0003",
+                "min_commission": "5",
+                "stamp_duty_rate": "0.001",
+                "transfer_fee_rate": "0.00002"
+              },
+              "2022-04-29": {
+                "commission_rate": "0.0003",
+                "min_commission": "5",
+                "stamp_duty_rate": "0.001",
+                "transfer_fee_rate": "0.00001"
+              },
+              "2023-08-28": {
+                "commission_rate": "0.0003",
+                "min_commission": "5",
+                "stamp_duty_rate": "0.0005",
+                "transfer_fee_rate": "0.00001"
+              }
+            }
+          },
+          "initial_cash": "1000000",
+          "native_order_submit_rate": "1000000/00:00:01",
+          "participation_rate": "0.01",
+          "slippage_bps": "10",
+          "symbol_fee_policy_sha256": "432e263a3263c766b146333b1dcbca41c90b04dd404bc68f103dce895248961a"
+        },
+        "run_sha256": "f44589c7c60943d5a5dbbf21903c66311eacfd8bd94df993b21427ab103343e2"
+      },
+      "artifact_sha256": "869b8beb02fafcea578d81d1c8ab0346d8c7daf5f9b6b97c1419f7a9f9a0d0eb"
+    },
+    {
+      "name": "V-repeat",
+      "fills": 978,
+      "rejections": 8,
+      "decisions": 36,
+      "max_positions": 31,
+      "fractional_cash_events": 3,
+      "fractional_cash_total": "133.44",
+      "rejection_reasons": {
+        "INSUFFICIENT_CASH_WITH_FEES": 3,
+        "LIMIT_DOWN_CLOSE": 1,
+        "LIMIT_UP_CLOSE": 1,
+        "SUSPENDED": 3
+      },
+      "planning_reasons": {
+        "UNITS": 1052,
+        "INACTIVE": 2,
+        "CASH_SHORTAGE": 3
+      },
+      "metrics": {
+        "start": "2021-01-04",
+        "end": "2023-12-29",
+        "sessions": 727,
+        "total_return": 0.024560120000000074,
+        "annualized_return": 0.008445878222697933,
+        "max_drawdown": -0.23790341845974528,
+        "sharpe_zero_rf": 0.14500892601654164
+      },
+      "seconds": 10.930110999965109,
+      "manifest": {
+        "schema_version": 1,
+        "input_sha256": "764ab66a8cdb562995abb9bded49e40ef6c65184ced2c8b85b8a2e06bc064b82",
+        "data_snapshot_id": "1a8af8b986b51f1362e6b41f9f3019aa1027d58d2ccf86310048c58b5c75ccf9",
+        "strategy_id": "value-V-next-open",
+        "strategy_source_sha256": "fa209e3a8dae2a612408cb92ce5630358ca86b89670435eda0c7c7abbd114154",
+        "strategy_params": {
+          "policy": "one submission; no chase; next month actual account feedback",
+          "target_bundle": "eea2c35455f1f4f44920efebe472ae0850470c4047777a78123cbafa7632fb53"
+        },
+        "code_commit": "7bed7086032b5de8d0c3993266c062fe74bd8a02",
+        "source_sha256": "6d142da612813ffa0bc059f25c696727d1a0173649168cf54e1ba5da5dd7f96a",
+        "environment": {
+          "python": "3.12.10",
+          "platform": "Windows-11-10.0.26200-SP0",
+          "nautilus_trader": "1.231.0",
+          "pydantic": "2.14.1",
+          "numpy": "2.2.6",
+          "pandas": "2.3.3",
+          "pyarrow": "26.0.0"
+        },
+        "config": {
+          "data_delivery": "sparse",
+          "execution_model": "bar-synthetic-l2-v1",
+          "execution_policy": "same-open-sell-before-buy-v1",
+          "fee_schedules": {
+            "adc5a4586eea67485a3088052d996e99e522137d72646f1f2fc6d25f67bb6c09": {
+              "2020-12-01": {
+                "commission_rate": "0.0003",
+                "min_commission": "5",
+                "stamp_duty_rate": "0.001",
+                "transfer_fee_rate": "0.00002"
+              },
+              "2022-04-29": {
+                "commission_rate": "0.0003",
+                "min_commission": "5",
+                "stamp_duty_rate": "0.001",
+                "transfer_fee_rate": "0.00001"
+              },
+              "2023-08-28": {
+                "commission_rate": "0.0003",
+                "min_commission": "5",
+                "stamp_duty_rate": "0.0005",
+                "transfer_fee_rate": "0.00001"
+              }
+            }
+          },
+          "initial_cash": "1000000",
+          "native_order_submit_rate": "1000000/00:00:01",
+          "participation_rate": "0.01",
+          "slippage_bps": "10",
+          "symbol_fee_policy_sha256": "432e263a3263c766b146333b1dcbca41c90b04dd404bc68f103dce895248961a"
+        },
+        "run_sha256": "50d22ee5e2354872e310e21e6e1eb7a027a53b71908cca78aee7c9a646fa33eb"
+      },
+      "artifact_sha256": "8e087727b7e5d7270746e47ffe7f98ccb6ba03a62174b5a060880dc2e6df2538"
+    }
+  ],
+  "upstream": {
+    "selector_sha256": "d92227e5edfa8e8249d719806c152ddc9308fe3b74f4f22c86b6f0c1a0698422",
+    "panels_sha256": {
+      "panel_20201231.csv": "864e732918d35e384fb9cc5ebcc14ad808183c9316389b0ab17ea67e4b09ab72",
+      "panel_20210129.csv": "7b0b29ce0ad7b85d99570adaee6302819a04bd6330c1d05d8282774e42424527",
+      "panel_20210226.csv": "956b1e720d22aa915649528b10d3a9031421e747dc9859e212920479534185c5",
+      "panel_20210331.csv": "8fd0e9315006edd07ef712d953e4a7bfb8cfa8390c3fee7a7ebe2a2b93f6e79c",
+      "panel_20210430.csv": "8db718d78ef73ac4c5036fc446957b450e28fdb40fa2b0dc357b8cbbbccaa58e",
+      "panel_20210531.csv": "767378ca63ea6b3abcb07e2af9d1109774d68528769f36c7a5021874a22dd8fb",
+      "panel_20210630.csv": "7210f9645c262e3e88079a0b3a08cd93c39f805f7864a29daac8c07572a0d6af",
+      "panel_20210730.csv": "8590ac49af1b2a4c506dceb3ad3d7f018b11633974d704ec1fe7227a20f63ec7",
+      "panel_20210831.csv": "e54df1a186b32a6ceec2e1bcc7a80c2027a833a3feb89e86a32d85e19793a7aa",
+      "panel_20210930.csv": "da6892db8918218ee8e31eddc0aca6331f354e35a617b90d9a6a605e17c54594",
+      "panel_20211029.csv": "e011be6a4d6de2efcce03a9644cb33b784a35362317dd3f25202e82a03bbd886",
+      "panel_20211130.csv": "08f434e7eb05299eab01f15657af48e49a44ac98c143eb7ca4451e9eb135995e",
+      "panel_20211231.csv": "7fd22393988b25e7ff557814448cdc367b21f9bca6fd23f5afaa163be5799cca",
+      "panel_20220128.csv": "1d843ebd5583a5798527f1fc8318803f59103c3052ec41dd172e8227747c38ab",
+      "panel_20220228.csv": "4747fc6104971f88b2c259ab3e3ab68201d327bd4900532584ccec3d6a49ae5b",
+      "panel_20220331.csv": "5fb3cc899fb7c6476fc16d4f222e1acffff5f66a1415cfe8133f0966aa4105e8",
+      "panel_20220429.csv": "46718c5689a492b5dbffa4475ecadf13a76b25dbe9b378876e9ad21f6aa352b1",
+      "panel_20220531.csv": "8b9cb5de6a81d95643a61dab4ea2e0a29ef71187bc9648dd701c4a236ffafb6b",
+      "panel_20220630.csv": "9fc21efb745462f9cdb084501d83e34aed30d3771e385dbf744d34b3aca4aca4",
+      "panel_20220729.csv": "f8e803e49cc5043b251c1e0747e1c1d19539a1aabf55dc99d2cb39116e7e8c4f",
+      "panel_20220831.csv": "ae99b06e39d1d5f1cd8c05d051dd2acc6531b0a1a79f3b67b9afbb46f410da7b",
+      "panel_20220930.csv": "b44deb5e17e9b374e6e2fc2a011ade2031a0ca2f16ea96645d5312fdc8bde62d",
+      "panel_20221031.csv": "c30dfc25bbdca456fb5442c17996c9f96bcee0f8a5c1fbada0630b7ea5d16411",
+      "panel_20221130.csv": "702d4476cd687354a6730042e7928c501fa80938836fe402e5fca1a405c22e21",
+      "panel_20221230.csv": "574c2eb9bb6823746904ad6e9821d85922e7b2a40e1ca12c42a079974999a67b",
+      "panel_20230131.csv": "b520ec91b285fd5e294fdd517e835e07eee95568b65c1fe570da790047260155",
+      "panel_20230228.csv": "4c76a3add42b907460fdacbbf61d5a9dfa7578b95378951a4ec59b813630fb0d",
+      "panel_20230331.csv": "5fdbe8c9897b99e7dc8a1350f6fe5483054bd7047787491c8e224967300fa75f",
+      "panel_20230428.csv": "aa5c3a8eb5fc2c3986b5de6bb763aeeda6f8d77aed6abd933a5c8535a172c86c",
+      "panel_20230531.csv": "fb3504246da0eec2644704180616d3b797d20e6cd3d9722feda795e8742d7a8a",
+      "panel_20230630.csv": "b5b67045f7f9fb01af385aaaaa4a7cbf5f3f795631fff9fbb140465172e6497f",
+      "panel_20230731.csv": "4101ceb68e210495110248e8090d78e4903fbaa7983f6345a87d6b451dbdc787",
+      "panel_20230831.csv": "4aa1c5158b5539832eec93ee9d5c125ce2ac1e6820c0e6cd9881667fe8440e32",
+      "panel_20230928.csv": "4bd4c2ca4efafc5ac3a4c8f763bf7f79c2c6a8c149df89a9afa2da4d3e6965c7",
+      "panel_20231031.csv": "494b39bfc6c6c89fff0ba148baebf0afd08e4a38c76dfdc95e08f2cfb300bec9",
+      "panel_20231130.csv": "a02af701a2c7b5bb79b5de69137d1e5eba025d9778ff81f39377b53ca8942a37"
+    },
+    "holdout_evaluated": false,
+    "variants": [
+      "V",
+      "R30"
+    ],
+    "top_n": 30,
+    "control_seed": "20261016",
+    "schedule_sha256": "e6c97879f1c7ab0291a34b745bf8a4bab04b81a7112375933f100b0c64b3c07c",
+    "upstream_config_sha256": "123f6885d67e017df7fe5cdefd6bbc506e81b35220aee703a0902ad0457aba66",
+    "targets_sha256": "4812428aec4adb9af9dcbd2e71d9fbfee93c842d54dc6b115e3e17e3bb17d55d",
+    "bundle_sha256": "eea2c35455f1f4f44920efebe472ae0850470c4047777a78123cbafa7632fb53"
+  },
+  "counts": {
+    "symbols": 173,
+    "targets": {
+      "V": 36,
+      "R30": 36
+    },
+    "bars": 126558,
+    "sessions": 750,
+    "actions": 449
+  },
+  "target_artifact_sha256": "37db7fa215b8c4f5e7f4bbb40bf754c6f9fd10227e02334bbc36d0b675773f92",
+  "derived_snapshot": {
+    "source_files_sha256": {
+      "lake/meta/stock_basic.parquet": "b5ef50993877d27ea09f9b1d4e50ae412403f7bf64d1ace9375f4aab3075b13e",
+      "lake/meta/trade_cal.parquet": "cbcefff493a287fa6c75b81c93fa3c71931b7764823109e81b9582985e22127c",
+      "lake/actions/dividend.parquet": "cb9339526456cee9ab0b33ddba4ed7646b9e014f6e25ebe3434b1cb2309e43c2",
+      "lake/market/daily/year=2020/daily_2020.parquet": "4e0c0b2598e0098f607d90b3b27778e3cc2a39b2b0e1b005a2714d777a569841",
+      "lake/market/stk_limit/year=2020/stk_limit_2020.parquet": "21d0ce0a24862708e7d0d3e1c62908f820eb68fb8326451fb4c9c2bb44bc9fd1",
+      "lake/market/suspend_d/year=2020/suspend_d_2020.parquet": "78cf68f89e3237f5763b6203ded5dd861b3a1f12e625e18232d639fa414b1761",
+      "lake/market/daily/year=2021/daily_2021.parquet": "47440e075818269dddefdf89c74a985e59402f5f816391324255fb9c3a03d269",
+      "lake/market/stk_limit/year=2021/stk_limit_2021.parquet": "c325761eaaa6a8de779506a5cfb1c835a6ca0b0af7e0c408626595781d3064fa",
+      "lake/market/suspend_d/year=2021/suspend_d_2021.parquet": "e5153d0acbb39454689bdae39b7492e12e6e5fdec9226304339209d06f63aa98",
+      "lake/market/daily/year=2022/daily_2022.parquet": "9449cadc29e284572c2150a86ade8c33dc405ef814f0aab2bc249dc235cae766",
+      "lake/market/stk_limit/year=2022/stk_limit_2022.parquet": "7c09c250fcea79b0b8517e7062481a80d540e39867851934978c31f51d3dd8de",
+      "lake/market/suspend_d/year=2022/suspend_d_2022.parquet": "e09324a8d33e5b7ae52d8e2d1ad864b88df83111fc141c5d26718facac23eaa5",
+      "lake/market/daily/year=2023/daily_2023.parquet": "1b04e57af962d924cd2e0b920cc1f4f1dce5b37a9d00a1a621b9780969d8460b",
+      "lake/market/stk_limit/year=2023/stk_limit_2023.parquet": "6f2ad4d08acfa53a19a308be385bf181d19abc0d14d858bf4ec52c21cdb98d5b",
+      "lake/market/suspend_d/year=2023/suspend_d_2023.parquet": "61affe277cf917ad55dbfd8ec9eb5bb8297ae737c4ebbe9b71086af8e97fa316"
+    },
+    "derived_files_sha256": {
+      "lake/meta/stock_basic.parquet": "f22818b92e50cf2b2a0801e46a92aabe433a156b3a51358767c27e99812fc1d3",
+      "lake/meta/trade_cal.parquet": "41d8d7e56a63b90d4ac04bd0c05178b3ebcf71706dabaf58f1dfad3c05bfcd9e",
+      "lake/actions/dividend.parquet": "8dbe38fff454e15a9ca8363f837da5b6351bb63d2a93e7144a3ce6fafe87ad08",
+      "lake/market/daily/year=2020/daily_2020.parquet": "1a5b515e3559cf86d8e8d80bd9b2911fbbbd42306d43b6d09c44ac3e465dacfb",
+      "lake/market/stk_limit/year=2020/stk_limit_2020.parquet": "16d09b9c89c00db2e789dce6dfc80b3c6f0606f21e423485281d6d837ba49167",
+      "lake/market/suspend_d/year=2020/suspend_d_2020.parquet": "86e24b67be19a91d24010692ea2669ad7633bb66c4531f0a2e9ed7a01d998c66",
+      "lake/market/daily/year=2021/daily_2021.parquet": "14d733ae1a01897a9746263d718b9c5d2614eed46958b36441dbb48770165197",
+      "lake/market/stk_limit/year=2021/stk_limit_2021.parquet": "06e5e820a2000530aac24f1befb9fa2c3bb197b8f56c38010e768136e9fd7a2b",
+      "lake/market/suspend_d/year=2021/suspend_d_2021.parquet": "f78647a14f3c8f2bb80e065c54fdcf3fde04064ac1d2e6642ae1687072ef434f",
+      "lake/market/daily/year=2022/daily_2022.parquet": "f50a4770b1de554c944d55626d39f996455edebde499c695a5aadb821f5d476c",
+      "lake/market/stk_limit/year=2022/stk_limit_2022.parquet": "1ae2f31e8b7ed60c8e34e40449c7db84382dd5f97b845d608dfad34bb6145675",
+      "lake/market/suspend_d/year=2022/suspend_d_2022.parquet": "3cdb9030bf93ac83bc171ef2f1d8872c6c8a93cc0c3b7451f1e8427b18f07cea",
+      "lake/market/daily/year=2023/daily_2023.parquet": "1741154a2798425ebdbda31031b5bdb7e808aaae412e7f1bc6b08f0a746d2761",
+      "lake/market/stk_limit/year=2023/stk_limit_2023.parquet": "ae00daa1ac264382adc5c628c5ae3ceb25540adfd9f3f33317c753c0002a19f6",
+      "lake/market/suspend_d/year=2023/suspend_d_2023.parquet": "e41d34e84c8ee31d65cbde7e72b037b629ec406a73f131fef77972b1e15548d3"
+    },
+    "resolutions_sha256": "96b54d4d38db2100666983baac038d324e358d8f99b1ec9148cfd5ef251b1d23",
+    "start": "2020-12-01",
+    "end": "2023-12-29",
+    "action_resolution_audit": [
+      {
+        "symbol": "600188.SH",
+        "ex_date": "20220714",
+        "input_sha256": [
+          "06f610e58ff91c6dc76a277db6d6c3a7b5405941aa8068c32c369e398f5edaf5",
+          "0e4cf4a53922b28df66492eda5f07d6e87e028fd5067ee3409265840d07bafd5"
+        ],
+        "output_sha256": "06f610e58ff91c6dc76a277db6d6c3a7b5405941aa8068c32c369e398f5edaf5",
+        "evidence_url": "https://static.cninfo.com.cn/finalpage/2022-07-08/1213984600.PDF",
+        "reason": "Official total and share entitlement; special dividend records are not automatically summed"
+      },
+      {
+        "symbol": "600188.SH",
+        "ex_date": "20230717",
+        "input_sha256": [
+          "4295880100fbfd8171c1bac1a85ea2d9e2b89fdcaf747a750f5d758e337a0961",
+          "c22a01edd242d98615fe13a2221db3e269c7e67bba9a47b33055a245aff0d70d"
+        ],
+        "output_sha256": "809dbd34bf6d7ffa521833b6e3d0b7f422cef664c88ac6e293b64c6f332eadb6",
+        "evidence_url": "https://static.sse.com.cn/disclosure/bond/announcement/company/c/new/2024-06-28/188613_20240628_U3P9.pdf",
+        "reason": "Official total and share entitlement; special dividend records are not automatically summed"
+      }
+    ],
+    "snapshot_sha256": "30e816a0d679db7fd4ce768912c1089a5c2ab84f4f1d757fa389f0a5ad64fd9f",
+    "symbols_sha256": "5a6908efb34f5df34f6858bd615030e6ab84e7e72a6528c82f2a09d969a4e2ef"
+  },
+  "execution_actions_sha256": "d9f6db9682cb08c30d293f2a87dc15e6bb0b5ab392842e91763fa2589a108278",
+  "market_snapshot": {
+    "schema_version": 1,
+    "source": "local-tushare-parquet",
+    "source_files_sha256": {
+      "lake/meta/stock_basic.parquet": "f22818b92e50cf2b2a0801e46a92aabe433a156b3a51358767c27e99812fc1d3",
+      "lake/meta/trade_cal.parquet": "41d8d7e56a63b90d4ac04bd0c05178b3ebcf71706dabaf58f1dfad3c05bfcd9e",
+      "lake/market/daily/year=2020/daily_2020.parquet": "1a5b515e3559cf86d8e8d80bd9b2911fbbbd42306d43b6d09c44ac3e465dacfb",
+      "lake/market/daily/year=2021/daily_2021.parquet": "14d733ae1a01897a9746263d718b9c5d2614eed46958b36441dbb48770165197",
+      "lake/market/daily/year=2022/daily_2022.parquet": "f50a4770b1de554c944d55626d39f996455edebde499c695a5aadb821f5d476c",
+      "lake/market/daily/year=2023/daily_2023.parquet": "1741154a2798425ebdbda31031b5bdb7e808aaae412e7f1bc6b08f0a746d2761",
+      "lake/market/stk_limit/year=2020/stk_limit_2020.parquet": "16d09b9c89c00db2e789dce6dfc80b3c6f0606f21e423485281d6d837ba49167",
+      "lake/market/stk_limit/year=2021/stk_limit_2021.parquet": "06e5e820a2000530aac24f1befb9fa2c3bb197b8f56c38010e768136e9fd7a2b",
+      "lake/market/stk_limit/year=2022/stk_limit_2022.parquet": "1ae2f31e8b7ed60c8e34e40449c7db84382dd5f97b845d608dfad34bb6145675",
+      "lake/market/stk_limit/year=2023/stk_limit_2023.parquet": "ae00daa1ac264382adc5c628c5ae3ceb25540adfd9f3f33317c753c0002a19f6",
+      "lake/market/suspend_d/year=2020/suspend_d_2020.parquet": "86e24b67be19a91d24010692ea2669ad7633bb66c4531f0a2e9ed7a01d998c66",
+      "lake/market/suspend_d/year=2021/suspend_d_2021.parquet": "f78647a14f3c8f2bb80e065c54fdcf3fde04064ac1d2e6642ae1687072ef434f",
+      "lake/market/suspend_d/year=2022/suspend_d_2022.parquet": "3cdb9030bf93ac83bc171ef2f1d8872c6c8a93cc0c3b7451f1e8427b18f07cea",
+      "lake/market/suspend_d/year=2023/suspend_d_2023.parquet": "e41d34e84c8ee31d65cbde7e72b037b629ec406a73f131fef77972b1e15548d3",
+      "lake/actions/dividend.parquet": "8dbe38fff454e15a9ca8363f837da5b6351bb63d2a93e7144a3ce6fafe87ad08"
+    },
+    "historical_vintage_pit": false,
+    "price_adjustment": "raw",
+    "volume_unit": "shares",
+    "security_universe": "explicit symbols; current master listing date only",
+    "deduplicated_actions": 16,
+    "excluded_unimplemented_actions": 8175,
+    "partial_suspension_policy": "DAY_BLOCKED",
+    "snapshot_id": "1a8af8b986b51f1362e6b41f9f3019aa1027d58d2ccf86310048c58b5c75ccf9"
+  },
+  "repeat_comparison": {
+    "business": {
+      "comparable_model": true,
+      "assumption_differences": {},
+      "schema_difference": null,
+      "fills": {
+        "reference_count": 978,
+        "candidate_count": 978,
+        "count_difference": 0,
+        "first_difference": null
+      },
+      "rejections": {
+        "reference_count": 8,
+        "candidate_count": 8,
+        "count_difference": 0,
+        "first_difference": null
+      },
+      "daily_nav": {
+        "reference_count": 750,
+        "candidate_count": 750,
+        "count_difference": 0,
+        "first_difference": null
+      },
+      "final_cash_differences": {},
+      "final_position_differences": {},
+      "equal_within_compared_fields": true
+    },
+    "orders": {
+      "reference_count": 978,
+      "candidate_count": 978,
+      "count_difference": 0,
+      "first_difference": null
+    },
+    "pending_intents": {
+      "reference_count": 0,
+      "candidate_count": 0,
+      "count_difference": 0,
+      "first_difference": null
+    },
+    "account_journal": {
+      "reference_count": 447,
+      "candidate_count": 447,
+      "count_difference": 0,
+      "first_difference": null
+    },
+    "orders_equal": true,
+    "pending_equal": true,
+    "journal_equal": true,
+    "equal": true
+  },
+  "seconds": 37.43538520002039,
+  "peak_working_set_mib": 793.5546875,
+  "script_sha256": "58011d8c616cf6115e85ca3b47d3c12b2212c7cc56a9ac33a8434c8baef7a85b",
+  "data_preparation_sha256": "606871aceaa8f4372ad90f995eed71023e818d41b5bf118bf99eb2e960738836",
+  "redacted_fields": [
+    "derived_snapshot.symbols",
+    "runs.manifest.config.symbol_fee_policy"
+  ],
+  "private_summary_sha256": "b8851ac915d98b36fba254542b2b450e662b78b215264b0c23eaf2a2c1eb21cb"
+}

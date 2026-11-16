@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "resolutions": [
+    {
+      "symbol": "600188.SH",
+      "ex_date": "20220714",
+      "expected_row_sha256": [
+        "06f610e58ff91c6dc76a277db6d6c3a7b5405941aa8068c32c369e398f5edaf5",
+        "0e4cf4a53922b28df66492eda5f07d6e87e028fd5067ee3409265840d07bafd5"
+      ],
+      "canonical": {
+        "ts_code": "600188.SH",
+        "end_date": "20211231",
+        "ann_date": "20220701",
+        "div_proc": "实施",
+        "stk_div": 0.0,
+        "stk_bo_rate": 0.0,
+        "stk_co_rate": 0.0,
+        "cash_div": 2.0,
+        "cash_div_tax": 2.0,
+        "record_date": "20220713",
+        "ex_date": "20220714",
+        "pay_date": "20220714",
+        "div_listdate": null,
+        "imp_ann_date": "20220708"
+      },
+      "evidence_url": "https://static.cninfo.com.cn/finalpage/2022-07-08/1213984600.PDF",
+      "reason": "Official total and share entitlement; special dividend records are not automatically summed"
+    },
+    {
+      "symbol": "600188.SH",
+      "ex_date": "20230717",
+      "expected_row_sha256": [
+        "4295880100fbfd8171c1bac1a85ea2d9e2b89fdcaf747a750f5d758e337a0961",
+        "c22a01edd242d98615fe13a2221db3e269c7e67bba9a47b33055a245aff0d70d"
+      ],
+      "canonical": {
+        "ts_code": "600188.SH",
+        "end_date": "20221231",
+        "ann_date": "20230701",
+        "div_proc": "实施",
+        "stk_div": 0.5,
+        "stk_bo_rate": 0.5,
+        "stk_co_rate": 0.0,
+        "cash_div": 4.3,
+        "cash_div_tax": 4.3,
+        "record_date": "20230714",
+        "ex_date": "20230717",
+        "pay_date": "20230717",
+        "div_listdate": "20230717",
+        "imp_ann_date": "20230710"
+      },
+      "evidence_url": "https://static.sse.com.cn/disclosure/bond/announcement/company/c/new/2024-06-28/188613_20240628_U3P9.pdf",
+      "reason": "Official total and share entitlement; special dividend records are not automatically summed"
+    }
+  ]
+}

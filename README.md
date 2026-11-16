@@ -26,13 +26,9 @@ python examples/regular_backtest.py --bars examples/data/bars_daily.csv --rules 
 python examples/regular_backtest.py --bars examples/data/bars_minute.csv --frequency MINUTE --rules examples/data/rules.csv --output minute-result.json
 ```
 
-已有本地 Tushare 湖时，可运行[真实数据候选闭环](docs/research-workflow-validation.md)：周频目标 → 实际账户规划 → 成交与约束 → 下次调仓反馈，附同池基准、容量/滑点压力及独立预期。该样例用于工程验收，股票池与数据边界在报告中列明。
+本地 Tushare 使用路径：[四股候选闭环](docs/research-workflow-validation.md)、[20 股五年验收](docs/long-candidate-validation.md)、[已有 V 价值因子接入](docs/value-strategy-integration.md)。V 接入保留原选股代码，明确采用次日开盘与碎股现金替代研究近似，收益与限制一并报告。
 
-2.7.0 增加按意图的执行结果与未成交数量、公共完整结果比较，以及三次新进程测量命令，见[研究交付与周转成本](docs/research-delivery-validation.md)。
-
-独立 broker 的同数据、同指令与同费用最小对照见[共同规则对账](docs/common-broker-validation.md)，其中列明适配项和未验证的 A 股能力。
-
-已有候选可参考[20 股五年使用验收](docs/long-candidate-validation.md)，观察多次调仓、实际权益、手数/资金约束与真实账户反馈；不将目标权重假定为已实现仓位。
+意图反馈、完整差分和进程测量见[研究交付](docs/research-delivery-validation.md)；独立 broker 的同数据最小实验见[共同规则对账](docs/common-broker-validation.md)。更多记录集中在[验收进度](docs/validation-progress.md)。
 
 ## 最小接口
 
