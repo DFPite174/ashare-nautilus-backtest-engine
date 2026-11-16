@@ -71,10 +71,13 @@ def compare_backtests(reference, candidate, *, allow_model_difference=False):
     if left['manifest']['input_sha256'] != right['manifest']['input_sha256']:
         raise ValueError('manifest.input_sha256 must match')
     assumptions = {}
+    optional = tuple(key for key in ('native_order_submit_rate',)
+                     if key in left['manifest']['config'] or key in right['manifest']['config'])
     for path, a, b in [('execution_model', left['execution_model'], right['execution_model'])] + [
         (f'manifest.config.{key}', left['manifest']['config'][key], right['manifest']['config'][key])
         for key in _CONFIG
-    ]:
+    ] + [(f'manifest.config.{key}', left['manifest']['config'].get(key), right['manifest']['config'].get(key))
+         for key in optional]:
         if a != b:
             assumptions[path] = dict(reference=a, candidate=b)
     if assumptions and not allow_model_difference:

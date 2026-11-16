@@ -158,14 +158,8 @@ python examples/validate_tushare_lake.py --root "C:\path\to\Tushare_DB" --output
 
 ## 延伸文档
 
-- [准备冻结验收](docs/prepared-scalar-validation.md)：2.5.4 精确标量检查顺序、341 项测试与前后三次准备计时。
-- [活动撤单与规划复核](docs/active-cancellation-validation.md)：2.5.3 日终撤单过滤、340 项测试及不继续扩大低收益优化的依据。
-- [湖输入内存验收](docs/lake-memory-validation.md)：2.5.2 生产湖分批读取、339 项测试及同数据前后三次测量。
-- [必要优化验收](docs/essential-validation.md)：2.5.1 摘要标量路径、332 项测试及宽持仓密集订单回归。
-- [数据准备优化验收](docs/preparation-validation.md)：2.5.0 共享规则结构、日期与摘要优化、327 项测试及相同输入复测。
-- [冻结订单专用回放验收](docs/order-tape-validation.md)：2.4.0 固定指令回放、315 项测试、计时边界及未达到的准备/内存门槛。
-- [分层改造第二批验收](docs/layered-batch2-validation.md)：2.3.0 输入复用、稀疏原型、财务一致性及性能门槛。
-- [分层改造第一批验收](docs/layered-batch1-validation.md)：2.2.0 接口、完整测试、500 股五年三次复测及尚未达到的性能目标。
+- [本地湖密集组合验收](docs/dense-lake-validation.md)：2.6.0 实库 64/128 股组合、申报限流修复及三路径对照。
+- [改造与验收进度](docs/validation-progress.md)：各批版本、实测结果、证据边界及历史记录索引。
 
 - [分层架构](docs/architecture.md)：研究、初筛、执行核验与未来实盘的职责。
 - [能力矩阵](docs/capabilities.md)：普通股、基础可转债及证据边界。

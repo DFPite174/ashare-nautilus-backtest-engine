@@ -40,6 +40,18 @@ def test_input_and_model_contract():
     assert 'manifest.config.slippage_bps' in report['assumption_differences']
 
 
+def test_native_submit_rate_is_an_explicit_comparison_assumption():
+    left = result(); right = deepcopy(left)
+    right['manifest']['config']['native_order_submit_rate'] = '1000000/00:00:01'
+    with pytest.raises(ValueError, match='native_order_submit_rate'):
+        compare_backtests(left, right)
+    report = compare_backtests(left, right, allow_model_difference=True)
+    assert not report['comparable_model']
+    assert report['assumption_differences']['manifest.config.native_order_submit_rate']['reference'] is None
+    left['manifest']['config']['native_order_submit_rate'] = '1000000/00:00:01'
+    assert compare_backtests(left, right)['comparable_model']
+
+
 def test_first_daily_divergence_and_final_balances():
     left = result(); right = deepcopy(left)
     right['daily_nav'][0]['cash'] = '988'

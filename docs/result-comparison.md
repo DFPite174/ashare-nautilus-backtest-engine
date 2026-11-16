@@ -28,3 +28,7 @@ assert report['equal_within_compared_fields']
 数值遵循 `BacktestResult.to_dict()` 的序列化约定：`Decimal` 转为字符串，其余 JSON 兼容值原样保留。采用精确比较、不设容差，不自动把数值字符串转成数字，因此 `"1"`、`"1.0"`、数值 `1` 可能不同。调用方应统一序列化方式；标识符 `"001"` 和拒绝原因等文本不会被误当成数字。
 
 `equal_within_compared_fields` 只说明上述比较字段相等；不比较订单状态、账户流水、待执行意图和全部运行元数据。两个结果一致并不能证明独立正确性、真实成交、历史复现或生产可用性。
+
+2.6.0 将原生模拟申报保护阈值写入 `manifest.config.native_order_submit_rate`。任一侧声明该字段就检查其差异；旧记录缺失按未知处理，不自动补默认值。新旧报告需明确使用 `allow_model_difference=True` 才能在假设不同时继续定位业务差异，并检查 `comparable_model` 和 `assumption_differences`，不能只看字段相等。
+
+本地密集实验的 `compare_complete` 还额外比较按意图关联的订单终态、期末未执行意图及完整权益事件；这是实验验收补充，不改变本接口的比较范围。

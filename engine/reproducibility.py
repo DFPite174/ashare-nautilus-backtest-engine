@@ -92,7 +92,8 @@ def digest(value):
 
 def build_manifest(instruments, bars, rules, actions, sessions, fee, signal, *, initial_cash,
                    participation_rate, slippage_bps, strategy_id, strategy_params, data_snapshot_id,
-                   _input_sha256=None,_data_delivery='full',_order_tape_sha256=None):
+                   _input_sha256=None,_data_delivery='full',_order_tape_sha256=None,
+                   _native_order_submit_rate=None):
     root = Path(__file__).resolve().parents[1]
     try:
         commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=root, stderr=subprocess.DEVNULL, text=True).strip()
@@ -129,6 +130,8 @@ def build_manifest(instruments, bars, rules, actions, sessions, fee, signal, *, 
                   execution_model='bar-synthetic-l2-v1',
                   data_delivery=_data_delivery,
                   fee_schedules=schedules,symbol_fee_policy=symbol_policies)
+    if _native_order_submit_rate is not None:
+        config['native_order_submit_rate'] = _native_order_submit_rate
     manifest = dict(schema_version=1, input_sha256=input_hash, data_snapshot_id=data_snapshot_id,
         strategy_id=strategy_id or getattr(signal,'__qualname__',type(signal).__name__),
         strategy_source_sha256=signal_hash, strategy_params=canonical(strategy_params or {}),

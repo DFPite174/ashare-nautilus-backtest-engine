@@ -11,7 +11,7 @@ from decimal import Decimal, ROUND_HALF_UP
 from zoneinfo import ZoneInfo
 
 from nautilus_trader.backtest.engine import BacktestEngine, BacktestEngineConfig
-from nautilus_trader.config import LoggingConfig
+from nautilus_trader.config import LoggingConfig, RiskEngineConfig
 from nautilus_trader.cache.config import CacheConfig
 from nautilus_trader.model.currencies import CNY
 from nautilus_trader.model.data import Bar, BarSpecification, BarType, QuoteTick
@@ -36,6 +36,7 @@ from engine.replay import BOUNDARY_CLIENT, build_events, session_boundary
 TZ = ZoneInfo("Asia/Shanghai")
 SIM = Venue("ASHARE")
 D = Decimal
+NATIVE_ORDER_SUBMIT_RATE = '1000000/00:00:01'
 
 
 def nanos(t):
@@ -542,10 +543,14 @@ def _run_backtest(instruments, bars, rules, signal=None, *, corporate_actions=()
         initial_cash=initial_cash,participation_rate=participation_rate,slippage_bps=slippage_bps,
         strategy_id=strategy_id,strategy_params=strategy_params,data_snapshot_id=data_snapshot_id,
         _input_sha256=_prepared.input_sha256 if _prepared is not None else None,_data_delivery=data_mode,
-        _order_tape_sha256=_tape.sha256 if _tape is not None else None)
+        _order_tape_sha256=_tape.sha256 if _tape is not None else None,
+        _native_order_submit_rate=NATIVE_ORDER_SUBMIT_RATE)
     liquidity=BarLiquidity(slippage_bps)
     # Complete research history lives in our immutable callback snapshots.
-    eng=BacktestEngine(config=BacktestEngineConfig(trader_id=TraderId('RESEARCH-001'),logging=LoggingConfig(log_level='ERROR'),cache=CacheConfig(bar_capacity=2,tick_capacity=2)))
+    eng=BacktestEngine(config=BacktestEngineConfig(
+        trader_id=TraderId('RESEARCH-001'),logging=LoggingConfig(log_level='ERROR'),
+        cache=CacheConfig(bar_capacity=2,tick_capacity=2),
+        risk_engine=RiskEngineConfig(max_order_submit_rate=NATIVE_ORDER_SUBMIT_RATE),run_analysis=False))
     try:
         eng.add_venue(venue=SIM,oms_type=OmsType.NETTING,account_type=AccountType.CASH,base_currency=CNY,starting_balances=[Money(float(initial_cash),CNY)],fee_model=fee,fill_model=liquidity,book_type=BookType.L2_MBP,liquidity_consumption=True,modules=[cash_module,LiquidityModule(liquidity)])
         native={}
