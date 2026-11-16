@@ -1,0 +1,426 @@
+{
+  "status": "PASS_ACCOUNT_FEEDBACK_NOT_ALPHA",
+  "symbols": [
+    "000001.SZ",
+    "000002.SZ",
+    "000063.SZ",
+    "000333.SZ",
+    "000651.SZ",
+    "000858.SZ",
+    "002027.SZ",
+    "002415.SZ",
+    "002475.SZ",
+    "002594.SZ",
+    "600000.SH",
+    "600009.SH",
+    "600016.SH",
+    "600028.SH",
+    "600030.SH",
+    "600036.SH",
+    "600048.SH",
+    "600050.SH",
+    "600104.SH",
+    "600519.SH"
+  ],
+  "start": "2021-01-04",
+  "end": "2025-12-31",
+  "purpose": "account-feedback engineering use; fixed prior 20-stock universe; not unbiased alpha research",
+  "historical_vintage_pit": false,
+  "initial_cash": "1000000",
+  "participation_rate": ".01",
+  "slippage_bps": 0,
+  "fractional_policy": "reject",
+  "runs": [
+    {
+      "name": "candidate",
+      "seconds": 6.809841000009328,
+      "decisions": 243,
+      "fills": 2446,
+      "rejections": 16,
+      "outcomes": {
+        "FILLED": 2446,
+        "REJECTED": 16
+      },
+      "rejection_reasons": {
+        "INSUFFICIENT_CASH_WITH_FEES": 15,
+        "LIMIT_UP_CLOSE": 1
+      },
+      "planning_reasons": {
+        "UNITS": 2098,
+        "CASH_SHORTAGE": 39,
+        "INACTIVE": 3
+      },
+      "max_positions": 19,
+      "nonzero_cash_events": 67,
+      "held_share_actions": 1,
+      "artifact_sha256": "0919725e323ccece0738d1e5e4209a82a166c126c4d57a6cfb45868b63288a05",
+      "manifest": {
+        "schema_version": 1,
+        "input_sha256": "f3826bf235f47594254625d30adabade61a6cd748da192e3804de4bd86b94fef",
+        "data_snapshot_id": "8b51f4c7fde5d7291f22a8504564564cc2fced01a6844ec4135a670cf32efb93",
+        "strategy_id": "weekly-ma20",
+        "strategy_source_sha256": "ddb04d05e94900eb9896b282947401f0517636b8cd71f8bd34e66ac969c59548",
+        "strategy_params": {
+          "policy": "one submission; no chase",
+          "rebalance_sessions": 5,
+          "window": 20
+        },
+        "code_commit": "2279dd988fce78dc5ecc309222fcf5dccd0962a8",
+        "source_sha256": "6d142da612813ffa0bc059f25c696727d1a0173649168cf54e1ba5da5dd7f96a",
+        "environment": {
+          "python": "3.12.10",
+          "platform": "Windows-11-10.0.26200-SP0",
+          "nautilus_trader": "1.231.0",
+          "pydantic": "2.14.1",
+          "numpy": "2.2.6",
+          "pandas": "2.3.3",
+          "pyarrow": "26.0.0"
+        },
+        "config": {
+          "data_delivery": "full",
+          "execution_model": "bar-synthetic-l2-v1",
+          "execution_policy": "same-open-sell-before-buy-v1",
+          "fee_schedules": {
+            "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872": {
+              "2021-01-04": {
+                "commission_rate": "0.0003",
+                "min_commission": "5",
+                "stamp_duty_rate": "0.001",
+                "transfer_fee_rate": "0.00002"
+              },
+              "2022-04-29": {
+                "commission_rate": "0.0003",
+                "min_commission": "5",
+                "stamp_duty_rate": "0.001",
+                "transfer_fee_rate": "0.00001"
+              },
+              "2023-08-28": {
+                "commission_rate": "0.0003",
+                "min_commission": "5",
+                "stamp_duty_rate": "0.0005",
+                "transfer_fee_rate": "0.00001"
+              }
+            }
+          },
+          "initial_cash": "1000000",
+          "native_order_submit_rate": "1000000/00:00:01",
+          "participation_rate": "0.01",
+          "slippage_bps": "0",
+          "symbol_fee_policy": {
+            "000001.SZ": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "000002.SZ": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "000063.SZ": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "000333.SZ": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "000651.SZ": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "000858.SZ": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "002027.SZ": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "002415.SZ": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "002475.SZ": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "002594.SZ": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "600000.SH": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "600009.SH": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "600016.SH": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "600028.SH": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "600030.SH": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "600036.SH": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "600048.SH": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "600050.SH": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "600104.SH": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "600519.SH": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872"
+          }
+        },
+        "run_sha256": "6b8a4ed0b2585f82f5a0a682123b0c6e3990a16b2378a8f5fbcf35897b8b8907"
+      }
+    },
+    {
+      "name": "benchmark",
+      "seconds": 4.609246899955906,
+      "decisions": 243,
+      "fills": 1394,
+      "rejections": 0,
+      "outcomes": {
+        "FILLED": 1394
+      },
+      "rejection_reasons": {},
+      "planning_reasons": {
+        "UNITS": 4824,
+        "INACTIVE": 3
+      },
+      "max_positions": 19,
+      "nonzero_cash_events": 119,
+      "held_share_actions": 1,
+      "artifact_sha256": "22097032afb32e859f21c1157869f42d05b520891b9196ac6747525e8ff7d46c",
+      "manifest": {
+        "schema_version": 1,
+        "input_sha256": "f3826bf235f47594254625d30adabade61a6cd748da192e3804de4bd86b94fef",
+        "data_snapshot_id": "8b51f4c7fde5d7291f22a8504564564cc2fced01a6844ec4135a670cf32efb93",
+        "strategy_id": "weekly-equal-weight",
+        "strategy_source_sha256": "ddb04d05e94900eb9896b282947401f0517636b8cd71f8bd34e66ac969c59548",
+        "strategy_params": {
+          "policy": "one submission; no chase",
+          "rebalance_sessions": 5,
+          "window": 20
+        },
+        "code_commit": "2279dd988fce78dc5ecc309222fcf5dccd0962a8",
+        "source_sha256": "6d142da612813ffa0bc059f25c696727d1a0173649168cf54e1ba5da5dd7f96a",
+        "environment": {
+          "python": "3.12.10",
+          "platform": "Windows-11-10.0.26200-SP0",
+          "nautilus_trader": "1.231.0",
+          "pydantic": "2.14.1",
+          "numpy": "2.2.6",
+          "pandas": "2.3.3",
+          "pyarrow": "26.0.0"
+        },
+        "config": {
+          "data_delivery": "full",
+          "execution_model": "bar-synthetic-l2-v1",
+          "execution_policy": "same-open-sell-before-buy-v1",
+          "fee_schedules": {
+            "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872": {
+              "2021-01-04": {
+                "commission_rate": "0.0003",
+                "min_commission": "5",
+                "stamp_duty_rate": "0.001",
+                "transfer_fee_rate": "0.00002"
+              },
+              "2022-04-29": {
+                "commission_rate": "0.0003",
+                "min_commission": "5",
+                "stamp_duty_rate": "0.001",
+                "transfer_fee_rate": "0.00001"
+              },
+              "2023-08-28": {
+                "commission_rate": "0.0003",
+                "min_commission": "5",
+                "stamp_duty_rate": "0.0005",
+                "transfer_fee_rate": "0.00001"
+              }
+            }
+          },
+          "initial_cash": "1000000",
+          "native_order_submit_rate": "1000000/00:00:01",
+          "participation_rate": "0.01",
+          "slippage_bps": "0",
+          "symbol_fee_policy": {
+            "000001.SZ": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "000002.SZ": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "000063.SZ": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "000333.SZ": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "000651.SZ": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "000858.SZ": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "002027.SZ": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "002415.SZ": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "002475.SZ": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "002594.SZ": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "600000.SH": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "600009.SH": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "600016.SH": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "600028.SH": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "600030.SH": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "600036.SH": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "600048.SH": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "600050.SH": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "600104.SH": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "600519.SH": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872"
+          }
+        },
+        "run_sha256": "b48e787ebbb2369cdb156e0cf08bb311087ec6885ce77b5d113ddd7c06a22d63"
+      }
+    },
+    {
+      "name": "repeat",
+      "seconds": 5.658808699983638,
+      "decisions": 243,
+      "fills": 2446,
+      "rejections": 16,
+      "outcomes": {
+        "FILLED": 2446,
+        "REJECTED": 16
+      },
+      "rejection_reasons": {
+        "INSUFFICIENT_CASH_WITH_FEES": 15,
+        "LIMIT_UP_CLOSE": 1
+      },
+      "planning_reasons": {
+        "UNITS": 2098,
+        "CASH_SHORTAGE": 39,
+        "INACTIVE": 3
+      },
+      "max_positions": 19,
+      "nonzero_cash_events": 67,
+      "held_share_actions": 1,
+      "artifact_sha256": "0919725e323ccece0738d1e5e4209a82a166c126c4d57a6cfb45868b63288a05",
+      "manifest": {
+        "schema_version": 1,
+        "input_sha256": "f3826bf235f47594254625d30adabade61a6cd748da192e3804de4bd86b94fef",
+        "data_snapshot_id": "8b51f4c7fde5d7291f22a8504564564cc2fced01a6844ec4135a670cf32efb93",
+        "strategy_id": "weekly-ma20",
+        "strategy_source_sha256": "ddb04d05e94900eb9896b282947401f0517636b8cd71f8bd34e66ac969c59548",
+        "strategy_params": {
+          "policy": "one submission; no chase",
+          "rebalance_sessions": 5,
+          "window": 20
+        },
+        "code_commit": "2279dd988fce78dc5ecc309222fcf5dccd0962a8",
+        "source_sha256": "6d142da612813ffa0bc059f25c696727d1a0173649168cf54e1ba5da5dd7f96a",
+        "environment": {
+          "python": "3.12.10",
+          "platform": "Windows-11-10.0.26200-SP0",
+          "nautilus_trader": "1.231.0",
+          "pydantic": "2.14.1",
+          "numpy": "2.2.6",
+          "pandas": "2.3.3",
+          "pyarrow": "26.0.0"
+        },
+        "config": {
+          "data_delivery": "full",
+          "execution_model": "bar-synthetic-l2-v1",
+          "execution_policy": "same-open-sell-before-buy-v1",
+          "fee_schedules": {
+            "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872": {
+              "2021-01-04": {
+                "commission_rate": "0.0003",
+                "min_commission": "5",
+                "stamp_duty_rate": "0.001",
+                "transfer_fee_rate": "0.00002"
+              },
+              "2022-04-29": {
+                "commission_rate": "0.0003",
+                "min_commission": "5",
+                "stamp_duty_rate": "0.001",
+                "transfer_fee_rate": "0.00001"
+              },
+              "2023-08-28": {
+                "commission_rate": "0.0003",
+                "min_commission": "5",
+                "stamp_duty_rate": "0.0005",
+                "transfer_fee_rate": "0.00001"
+              }
+            }
+          },
+          "initial_cash": "1000000",
+          "native_order_submit_rate": "1000000/00:00:01",
+          "participation_rate": "0.01",
+          "slippage_bps": "0",
+          "symbol_fee_policy": {
+            "000001.SZ": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "000002.SZ": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "000063.SZ": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "000333.SZ": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "000651.SZ": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "000858.SZ": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "002027.SZ": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "002415.SZ": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "002475.SZ": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "002594.SZ": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "600000.SH": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "600009.SH": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "600016.SH": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "600028.SH": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "600030.SH": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "600036.SH": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "600048.SH": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "600050.SH": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "600104.SH": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872",
+            "600519.SH": "67c01aada3950ce7f5e2ee92f441738d72464722d245fdfab5700ffcf4b51872"
+          }
+        },
+        "run_sha256": "6b8a4ed0b2585f82f5a0a682123b0c6e3990a16b2378a8f5fbcf35897b8b8907"
+      }
+    }
+  ],
+  "snapshot": {
+    "schema_version": 1,
+    "source": "local-tushare-parquet",
+    "source_files_sha256": {
+      "lake/meta/stock_basic.parquet": "b5ef50993877d27ea09f9b1d4e50ae412403f7bf64d1ace9375f4aab3075b13e",
+      "lake/meta/trade_cal.parquet": "cbcefff493a287fa6c75b81c93fa3c71931b7764823109e81b9582985e22127c",
+      "lake/market/daily/year=2021/daily_2021.parquet": "47440e075818269dddefdf89c74a985e59402f5f816391324255fb9c3a03d269",
+      "lake/market/daily/year=2022/daily_2022.parquet": "9449cadc29e284572c2150a86ade8c33dc405ef814f0aab2bc249dc235cae766",
+      "lake/market/daily/year=2023/daily_2023.parquet": "1b04e57af962d924cd2e0b920cc1f4f1dce5b37a9d00a1a621b9780969d8460b",
+      "lake/market/daily/year=2024/daily_2024.parquet": "17fef1b3251e534b71d4783ad95da4e92b86318c6097f44f33a74650e768a403",
+      "lake/market/daily/year=2025/daily_2025.parquet": "9043435012898fe9573a00714c4bcadc276a88ad8c2764c6eddb0f58332be547",
+      "lake/market/stk_limit/year=2021/stk_limit_2021.parquet": "c325761eaaa6a8de779506a5cfb1c835a6ca0b0af7e0c408626595781d3064fa",
+      "lake/market/stk_limit/year=2022/stk_limit_2022.parquet": "7c09c250fcea79b0b8517e7062481a80d540e39867851934978c31f51d3dd8de",
+      "lake/market/stk_limit/year=2023/stk_limit_2023.parquet": "6f2ad4d08acfa53a19a308be385bf181d19abc0d14d858bf4ec52c21cdb98d5b",
+      "lake/market/stk_limit/year=2024/stk_limit_2024.parquet": "baaf53472bd506118cde82774ee835ab45abcdd84f847c98aecafd23d9337ce7",
+      "lake/market/stk_limit/year=2025/stk_limit_2025.parquet": "0a8ce11bd40a3c7a601033e429043cb8ac29345475bc9f706241aedc9c2da28f",
+      "lake/market/suspend_d/year=2021/suspend_d_2021.parquet": "e5153d0acbb39454689bdae39b7492e12e6e5fdec9226304339209d06f63aa98",
+      "lake/market/suspend_d/year=2022/suspend_d_2022.parquet": "e09324a8d33e5b7ae52d8e2d1ad864b88df83111fc141c5d26718facac23eaa5",
+      "lake/market/suspend_d/year=2023/suspend_d_2023.parquet": "61affe277cf917ad55dbfd8ec9eb5bb8297ae737c4ebbe9b71086af8e97fa316",
+      "lake/market/suspend_d/year=2024/suspend_d_2024.parquet": "a03b557a8f0fd607dd3dcb6b03ac776538497dfbd4d7486f3bdaff97ef93a9a0",
+      "lake/market/suspend_d/year=2025/suspend_d_2025.parquet": "816cb672a51f860addcc0d223500237013e0bdd908397d459dd5850a218c0ea8",
+      "lake/actions/dividend.parquet": "cb9339526456cee9ab0b33ddba4ed7646b9e014f6e25ebe3434b1cb2309e43c2"
+    },
+    "historical_vintage_pit": false,
+    "price_adjustment": "raw",
+    "volume_unit": "shares",
+    "security_universe": "explicit symbols; current master listing date only",
+    "deduplicated_actions": 7,
+    "excluded_unimplemented_actions": 1011,
+    "partial_suspension_policy": "DAY_BLOCKED",
+    "snapshot_id": "8b51f4c7fde5d7291f22a8504564564cc2fced01a6844ec4135a670cf32efb93"
+  },
+  "bars": 24222,
+  "sessions": 1212,
+  "actions": 128,
+  "load_seconds": 0.8160297000431456,
+  "share_actions": 1,
+  "prepare_seconds": 0.5800717999809422,
+  "repeat_comparison": {
+    "business": {
+      "comparable_model": true,
+      "assumption_differences": {},
+      "schema_difference": null,
+      "fills": {
+        "reference_count": 2446,
+        "candidate_count": 2446,
+        "count_difference": 0,
+        "first_difference": null
+      },
+      "rejections": {
+        "reference_count": 16,
+        "candidate_count": 16,
+        "count_difference": 0,
+        "first_difference": null
+      },
+      "daily_nav": {
+        "reference_count": 1212,
+        "candidate_count": 1212,
+        "count_difference": 0,
+        "first_difference": null
+      },
+      "final_cash_differences": {},
+      "final_position_differences": {},
+      "equal_within_compared_fields": true
+    },
+    "orders": {
+      "reference_count": 2446,
+      "candidate_count": 2446,
+      "count_difference": 0,
+      "first_difference": null
+    },
+    "pending_intents": {
+      "reference_count": 0,
+      "candidate_count": 0,
+      "count_difference": 0,
+      "first_difference": null
+    },
+    "account_journal": {
+      "reference_count": 128,
+      "candidate_count": 128,
+      "count_difference": 0,
+      "first_difference": null
+    },
+    "orders_equal": true,
+    "pending_equal": true,
+    "journal_equal": true,
+    "equal": true
+  },
+  "total_seconds": 18.5205227000406,
+  "peak_working_set_mib": 797.84765625,
+  "timing_scope": "same process load, prepare, three replays/validations/exports; excludes interpreter/imports",
+  "workflow_sha256": "205024cdf54d4135ae9acee93d16320c598efdcddbe72dc92d94d0ca4cb8a5ca",
+  "experiment_sha256": "22fba850f0d006a4326cae3e618b5d47e2e94886c922e50b0b0bf91e44e47995"
+}

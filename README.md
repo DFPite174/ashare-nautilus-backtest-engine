@@ -32,6 +32,8 @@ python examples/regular_backtest.py --bars examples/data/bars_minute.csv --frequ
 
 独立 broker 的同数据、同指令与同费用最小对照见[共同规则对账](docs/common-broker-validation.md)，其中列明适配项和未验证的 A 股能力。
 
+已有候选可参考[20 股五年使用验收](docs/long-candidate-validation.md)，观察多次调仓、实际权益、手数/资金约束与真实账户反馈；不将目标权重假定为已实现仓位。
+
 ## 最小接口
 
 ```python

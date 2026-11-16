@@ -31,6 +31,15 @@ def test_next_rebalance_uses_actual_partial_position_and_cash():
     assert all(row['cash_matches'] and row['positions_match'] for row in result.daily_nav)
 
 
+def test_candidate_respects_supplied_universe_outside_four_stock_demo():
+    bars, rules = fixture(days=8, symbol='600036.SH')
+    data = LakeInputs([Instrument(symbol='600036.SH', exchange=Venue.SSE)],
+                      bars, rules, [b.end.date() for b in bars], [], {'snapshot_id': 'fixture'})
+    result, decisions = run_candidate(data, False, D(10000), 1, 0)
+    assert decisions[0]['weights'] == {'600036.SH': 1.0}
+    assert result.fills and result.fills[0]['symbol'] == '600036.SH'
+
+
 def test_independent_cash_fee_dividend_and_next_session_oracle():
     from contracts import CorporateAction
     from engine import run_backtest, OrderIntent

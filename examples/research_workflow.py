@@ -80,8 +80,8 @@ def run_candidate(data, filtered, initial, participation, slippage, prepared=Non
         index = indexes[day]
         if index % 5 or index + 1 == len(days):
             return []
-        weights = target_weights({s: [D(str(b.close)) for b in state.history.get(s, ())]
-                                  for s in SYMBOLS if s in {i.symbol for i in data.instruments}}, filtered)
+        weights = target_weights({i.symbol: [D(str(b.close)) for b in state.history.get(i.symbol, ())]
+                                  for i in data.instruments}, filtered)
         target = TargetWeights(signal_date=day, execution_date=days[index + 1], weights=weights)
         symbols = set(weights) | set(state.positions)
         # Only today's known rules are available at the decision, never tomorrow's status.
