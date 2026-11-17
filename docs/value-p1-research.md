@@ -54,4 +54,6 @@ NC平均权重最高的行业为水泥15.37%、普钢14.44%、区域地产10.37%
 
 下一阶段固定NC的盈利与现金规则，只检验行业约束带来的收益、回撤和股票替换，避免同时改动多个变量。最终留出期继续封存。
 
+该项实验已完成，取舍见[30%行业上限研究](value-industry-cap-research.md)。
+
 [固定方案](superpowers/plans/2026-11-17-value-p1.md)与[完整聚合结果](evidence/value-p1-summary.json)已保存；六组目标、逐笔成交和账户路径位于本地`../benchmark/value-p1-final/`。复跑入口为`examples/run_value_p1.py`，使用新的输出目录，参数可通过`--help`查看。
