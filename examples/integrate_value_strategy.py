@@ -69,6 +69,21 @@ def load_targets(root):
     return result, provenance
 
 
+def decision_prices(closed, state, symbols):
+    closed={bar.symbol:bar for bar in closed}
+    prices={}
+    for symbol in symbols:
+        if symbol in state.valuation_prices:
+            if state.valuation_times[symbol]>state.as_of: raise ValueError('Future valuation price')
+            prices[symbol]=state.valuation_prices[symbol]
+        elif symbol in closed and closed[symbol].end<=state.as_of:
+            # A blocked IPO session can have an official close before any cached valuation.
+            prices[symbol]=D(str(closed[symbol].close))
+        else:
+            raise ValueError(f'No known decision price for {symbol}')
+    return prices
+
+
 def replay(data, prepared, targets, provenance):
     schedule = {t.signal_date: t for t in targets}
     decisions, seen = [], set()
@@ -87,11 +102,10 @@ def replay(data, prepared, targets, provenance):
         symbols = set(target.weights) | set(state.positions)
         rules = {s: DailyMarketRule(**data.rules[s, day]) for s in symbols}
         plan = plan_rebalance(target, cash=state.available_cash, holdings=state.positions,
-            sellable=state.sellable, prices={s: state.valuation_prices[s] for s in symbols},
+            sellable=state.sellable, prices=decision_prices(closed,state,symbols),
             rules=rules, valuation_at=state.as_of, decision_at=state.as_of,
             cash_reserve=D(0), receivables=state.receivables)
         intents = [replace(i, intent_id=f'{day}:{i.symbol}:{i.side}') for i in plan.intents]
-        assert all(state.valuation_times[s] <= state.as_of for s in symbols)
         decisions.append(dict(date=str(day), decision_time=state.as_of.isoformat(),
             execution_date=str(target.execution_date), weights=dict(target.weights),
             holdings=dict(state.positions), sellable=dict(state.sellable), cash=str(state.available_cash),

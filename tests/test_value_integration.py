@@ -8,6 +8,18 @@ from types import SimpleNamespace
 import json
 
 
+def test_planner_can_use_known_close_for_new_intraday_blocked_security():
+    from datetime import datetime, timezone, timedelta
+    from examples.integrate_value_strategy import decision_prices
+    at=datetime(2020,12,31,15,tzinfo=timezone.utc)
+    state=SimpleNamespace(as_of=at,valuation_prices={'OLD':10},valuation_times={'OLD':at})
+    closed=[SimpleNamespace(symbol='NEW',close=20,end=at)]
+    assert decision_prices(closed,state,{'OLD','NEW'})=={'OLD':10,'NEW':20}
+    closed[0].end=at+timedelta(days=1)
+    with pytest.raises(ValueError,match='known'):
+        decision_prices(closed,state,{'NEW'})
+
+
 def test_action_resolution_is_snapshot_bound_not_sum_or_max():
     rows = [dict(ts_code='X', ex_date='20220714', cash_div_tax=2.),
             dict(ts_code='X', ex_date='20220714', cash_div_tax=.4)]
@@ -137,3 +149,21 @@ def test_replay_archives_weights_as_structured_json_not_frozen_mapping_text():
     prepared = prepare_backtest(instruments,bars,rules,trading_days=days)
     _, decisions = replay(data,prepared,[TargetWeights(signal_date=days[0],execution_date=days[1],weights={'600000.SH':1.})],{'bundle_sha256':'fixture'})
     assert json.loads(json.dumps(decisions,default=str))[0]['weights'] == {'600000.SH':1.}
+
+
+def test_blocked_first_session_quote_is_known_but_does_not_enable_a_buy():
+    from test_regular_backtest import fixture
+    from examples.integrate_value_strategy import replay
+    from engine import prepare_backtest
+    from engine.tushare_lake import LakeInputs
+    from contracts import Instrument, Venue
+    from contracts.models import TargetWeights
+    bars,rules=fixture(days=3,symbol='600000.SH')
+    days=[b.end.date() for b in bars]
+    rules['600000.SH',days[0]]['trade_status']='DAY_BLOCKED'
+    instruments=[Instrument(symbol='600000.SH',exchange=Venue.SSE)]
+    data=LakeInputs(instruments,bars,rules,days,[],{'snapshot_id':'fixture'})
+    prepared=prepare_backtest(instruments,bars,rules,trading_days=days)
+    result,decisions=replay(data,prepared,[TargetWeights(signal_date=days[0],execution_date=days[1],weights={'600000.SH':1.})],{'bundle_sha256':'fixture'})
+    assert not result.fills
+    assert tuple(decisions[0]['allocations'][0]['reasons'])==('INACTIVE',)

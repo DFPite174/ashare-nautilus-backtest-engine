@@ -1,0 +1,348 @@
+{
+  "status": "CLOSEOUT_COMPLETED",
+  "holdout_evaluated": false,
+  "plan_sha256": "161bcc462604bbc9941928907c8afb71df46cfd6969bf4ed3988eb563976bd7e",
+  "script_sha256": "94b50f80b5381971ff2b5fbff7298e10a3f45f4305f3a2ad72fef4e6c0c95126",
+  "target_bundle_sha256": "a07e07bb14b375c5e445541da925a809902b1b65b7542f1f462ab24120a5ff10",
+  "early_annual_rows": 7346,
+  "phases": {
+    "development": {
+      "first_execution": "2015-02-02",
+      "snapshot_sha256": "332162207797ef8d633b6eabd22ffa0d721177a8ee106d70450a6141b0534ab7",
+      "runs": [
+        {
+          "name": "NC30",
+          "status": "COMPLETE",
+          "metrics": {
+            "start": "2015-02-02",
+            "end": "2020-12-31",
+            "sessions": 1442,
+            "total_return": 0.6990562300000001,
+            "annualized_return": 0.09706025371155813,
+            "max_drawdown": -0.4292657178656055,
+            "sharpe_zero_rf": 0.48569739873533796
+          },
+          "annual_returns": {
+            "2015": 0.36735924,
+            "2016": 0.006032152896410748,
+            "2017": 0.1372769479802725,
+            "2018": -0.10185526058308135,
+            "2019": 0.19891049987828976,
+            "2020": 0.0085883112365616
+          },
+          "min_selected": 8,
+          "fills": 1842,
+          "fees": "31416.78",
+          "artifact_sha256": "13862de85e932c9dabc6c7cd6191d403370bfef5df252bf4b806e731baa155a3"
+        },
+        {
+          "name": "NC",
+          "status": "COMPLETE",
+          "metrics": {
+            "start": "2015-02-02",
+            "end": "2020-12-31",
+            "sessions": 1442,
+            "total_return": 0.6615328500000002,
+            "annualized_return": 0.09278705437959744,
+            "max_drawdown": -0.4292657178656055,
+            "sharpe_zero_rf": 0.4708169155462281
+          },
+          "annual_returns": {
+            "2015": 0.36735924,
+            "2016": 0.0070486889751079605,
+            "2017": 0.11797778140935103,
+            "2018": -0.10874024284556973,
+            "2019": 0.2029874028315793,
+            "2020": 0.0066471873936990375
+          },
+          "min_selected": 8,
+          "fills": 1809,
+          "fees": "30346.54",
+          "artifact_sha256": "0f74d6d2c8e254a680b8f22a72f1256abe7c6d19de58a96d8ffc8ed191d10af9"
+        },
+        {
+          "name": "V",
+          "status": "COMPLETE",
+          "metrics": {
+            "start": "2015-02-02",
+            "end": "2020-12-31",
+            "sessions": 1442,
+            "total_return": 0.5140348600000002,
+            "annualized_return": 0.07517722360374646,
+            "max_drawdown": -0.4152859627190252,
+            "sharpe_zero_rf": 0.4024935362263623
+          },
+          "annual_returns": {
+            "2015": 0.26497895,
+            "2016": -0.0537985236829435,
+            "2017": 0.2586579384112596,
+            "2018": -0.23430960971095294,
+            "2019": 0.3349112993166637,
+            "2020": -0.01676884848385351
+          },
+          "min_selected": 30,
+          "fills": 1783,
+          "fees": "29675.29",
+          "artifact_sha256": "f057b9fd64eb24a2742f4c988c8a8a2d9c9361d2d1495c6948ac97c7b1d5de16"
+        },
+        {
+          "name": "R30",
+          "status": "BLOCKED",
+          "error_type": "ValueError",
+          "reason_sha256": "fe4b55a98cc3edeb005886abdf7bb6338e8c502af184931544bc2530abfbef24"
+        },
+        {
+          "name": "MC_20261016",
+          "status": "BLOCKED",
+          "error_type": "ValueError",
+          "reason_sha256": "4495c014801abd0f212d9fdcb5c43144102bac89b2332c5c69c2a2613f918d00"
+        },
+        {
+          "name": "MC_20261017",
+          "status": "COMPLETE",
+          "metrics": {
+            "start": "2015-02-02",
+            "end": "2020-12-31",
+            "sessions": 1442,
+            "total_return": 0.73456448,
+            "annualized_return": 0.10103283983070854,
+            "max_drawdown": -0.5236455326696128,
+            "sharpe_zero_rf": 0.47604302496173834
+          },
+          "annual_returns": {
+            "2015": 0.77969052,
+            "2016": -0.0851329140079928,
+            "2017": -0.09941260927199044,
+            "2018": -0.22621801511176326,
+            "2019": 0.17099533695664876,
+            "2020": 0.3055343899672693
+          },
+          "min_selected": 8,
+          "fills": 1513,
+          "fees": "19340.08",
+          "artifact_sha256": "261854a6dbd24f47bed3d66efaaaac63d87832c1b1d1d14c82e35804b45bf280"
+        },
+        {
+          "name": "MC_20261018",
+          "status": "COMPLETE",
+          "metrics": {
+            "start": "2015-02-02",
+            "end": "2020-12-31",
+            "sessions": 1442,
+            "total_return": 0.3812558899999998,
+            "annualized_return": 0.05806884789818012,
+            "max_drawdown": -0.646096594253436,
+            "sharpe_zero_rf": 0.3410865546017279
+          },
+          "annual_returns": {
+            "2015": 0.58871409,
+            "2016": -0.15571737014052667,
+            "2017": -0.11240628110569968,
+            "2018": -0.261237931528314,
+            "2019": 0.307940294034264,
+            "2020": 0.200698071798822
+          },
+          "min_selected": 8,
+          "fills": 1414,
+          "fees": "17181.35",
+          "artifact_sha256": "63fba7402a6dc7bbb8f19bedb27a05d70d7fbf62608a63e1c080e7e0b4408c2d"
+        },
+        {
+          "name": "MC_20261019",
+          "status": "COMPLETE",
+          "metrics": {
+            "start": "2015-02-02",
+            "end": "2020-12-31",
+            "sessions": 1442,
+            "total_return": 0.58035619,
+            "annualized_return": 0.0832629269456251,
+            "max_drawdown": -0.5313090090031709,
+            "sharpe_zero_rf": 0.4160514282701023
+          },
+          "annual_returns": {
+            "2015": 0.5928692,
+            "2016": -0.011816776920540619,
+            "2017": -0.11554295005569784,
+            "2018": -0.23328907625751483,
+            "2019": 0.24313137727205406,
+            "2020": 0.19100055366029017
+          },
+          "min_selected": 8,
+          "fills": 1509,
+          "fees": "18774.97",
+          "artifact_sha256": "a25038b7adb24a08063082463c17bb21d218122b32622890cc472b493e108319"
+        },
+        {
+          "name": "MC_20261020",
+          "status": "COMPLETE",
+          "metrics": {
+            "start": "2015-02-02",
+            "end": "2020-12-31",
+            "sessions": 1442,
+            "total_return": 0.57115998,
+            "annualized_return": 0.08215867472687322,
+            "max_drawdown": -0.5393784273035955,
+            "sharpe_zero_rf": 0.42475476625935715
+          },
+          "annual_returns": {
+            "2015": 0.72321759,
+            "2016": -0.09168575745562114,
+            "2017": -0.042818682433433064,
+            "2018": -0.2721578272317285,
+            "2019": 0.2715871737958586,
+            "2020": 0.13309571516715588
+          },
+          "min_selected": 8,
+          "fills": 1531,
+          "fees": "20833.97",
+          "artifact_sha256": "6d0f7c7f1fcf46debe56174ea4cdb10a64d8198c2c1b70c32d2d888c1c9aecbb"
+        }
+      ],
+      "gate": {
+        "status": "INCOMPLETE_DATA",
+        "pass": false
+      }
+    },
+    "validation": {
+      "first_execution": "2021-01-04",
+      "snapshot_sha256": "e2beb0f623811651c9ac5006672afcfe0b49bdc3f93692156a47f4231f689820",
+      "runs": [
+        {
+          "name": "NC30",
+          "status": "COMPLETE",
+          "metrics": {
+            "start": "2021-01-04",
+            "end": "2023-12-29",
+            "sessions": 727,
+            "total_return": 0.3862587500000001,
+            "annualized_return": 0.11986968370251039,
+            "max_drawdown": -0.23140777529020928,
+            "sharpe_zero_rf": 0.662613649014811
+          },
+          "annual_returns": {
+            "2021": 0.20783311,
+            "2022": 0.05848164735275389,
+            "2023": 0.08431143408556786
+          },
+          "min_selected": 30,
+          "fills": 949,
+          "fees": "13484.99",
+          "artifact_sha256": "12b145ca669d08063a79ab6bb313eaff241cdc939e7a5ff97a1e6926338431d3"
+        },
+        {
+          "name": "MC_20261016",
+          "status": "COMPLETE",
+          "metrics": {
+            "start": "2021-01-04",
+            "end": "2023-12-29",
+            "sessions": 727,
+            "total_return": 0.4087072300000001,
+            "annualized_return": 0.12612275023469866,
+            "max_drawdown": -0.22578060154076907,
+            "sharpe_zero_rf": 0.7202074503491968
+          },
+          "annual_returns": {
+            "2021": 0.3279219,
+            "2022": 0.017275767498073493,
+            "2023": 0.042820382117718735
+          },
+          "min_selected": 30,
+          "fills": 764,
+          "fees": "7325.44",
+          "artifact_sha256": "0db707f594b3f1638ad754f273c83a15dc323f582f12ea77662a7bd5956476c7"
+        },
+        {
+          "name": "MC_20261017",
+          "status": "COMPLETE",
+          "metrics": {
+            "start": "2021-01-04",
+            "end": "2023-12-29",
+            "sessions": 727,
+            "total_return": 0.10220527999999995,
+            "annualized_return": 0.034306955739889844,
+            "max_drawdown": -0.27355164680211685,
+            "sharpe_zero_rf": 0.2749100310171924
+          },
+          "annual_returns": {
+            "2021": 0.14543201,
+            "2022": -0.05715841658729268,
+            "2023": 0.020597365499138938
+          },
+          "min_selected": 30,
+          "fills": 721,
+          "fees": "7022.82",
+          "artifact_sha256": "6ea5102536001794e6d49a9ae839d52ac224e6ce844f54cd963ced9767e60995"
+        },
+        {
+          "name": "MC_20261018",
+          "status": "COMPLETE",
+          "metrics": {
+            "start": "2021-01-04",
+            "end": "2023-12-29",
+            "sessions": 727,
+            "total_return": 0.08036105999999998,
+            "annualized_return": 0.027155024878579237,
+            "max_drawdown": -0.28634445325477165,
+            "sharpe_zero_rf": 0.23589317175813548
+          },
+          "annual_returns": {
+            "2021": 0.24984721,
+            "2022": -0.15923546366919522,
+            "2023": 0.028105334272796382
+          },
+          "min_selected": 30,
+          "fills": 753,
+          "fees": "7977.97",
+          "artifact_sha256": "132840f4448d0a7cb6a84ae877474def9cf04dbd4eb240c05183ab710b8e56b0"
+        },
+        {
+          "name": "MC_20261019",
+          "status": "BLOCKED",
+          "error_type": "ValueError",
+          "reason_sha256": "b5d56b891cdfde001843831c0ce0cadfe0d592dba11fb232da8f25f9825a5260"
+        },
+        {
+          "name": "MC_20261020",
+          "status": "COMPLETE",
+          "metrics": {
+            "start": "2021-01-04",
+            "end": "2023-12-29",
+            "sessions": 727,
+            "total_return": 0.2516135700000002,
+            "annualized_return": 0.08090149113726808,
+            "max_drawdown": -0.22922968832583135,
+            "sharpe_zero_rf": 0.5098405525283581
+          },
+          "annual_returns": {
+            "2021": 0.21395082,
+            "2022": 0.03750086020782951,
+            "2023": -0.0062418467021283204
+          },
+          "min_selected": 30,
+          "fills": 816,
+          "fees": "7876.80",
+          "artifact_sha256": "53648aa95f5a312031023886088669629eab6e7cc6e1efd7de9d7b8b1bb3be24"
+        }
+      ],
+      "gate": {
+        "status": "INCOMPLETE_DATA",
+        "pass": false
+      }
+    }
+  },
+  "validation_NC30_economic_path_equal": true,
+  "csi300_price_reference": {
+    "development": {
+      "start": "20150130",
+      "end": "20201231",
+      "total_return": 0.5173840187049228
+    },
+    "validation": {
+      "start": "20201231",
+      "end": "20231229",
+      "total_return": -0.3416004698262244
+    }
+  },
+  "decision": "DATA_BLOCKED",
+  "private_review_sha256": "3c35254e7d05e261918313fbcf3bdf789bb78fe696717cde5f2a8b0ffb213692"
+}

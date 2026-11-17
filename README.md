@@ -155,7 +155,8 @@ python examples/validate_tushare_lake.py --root "C:\path\to\Tushare_DB" --output
 | 技术栈 | NT 1.231.0（Python + Cython/Rust 核心）及 Python 规则/账本层；固定 Windows 送转 ABI | 跨平台送转构建、依赖升级迁移 |
 | 策略与资产 | 沪深现金多头；股票 `T+1`、转债 `T+0` 的基础交易回测 | 融资融券、衍生品保证金、转股/赎回/到期结算 |
 | 成交模型 | Bar 合成深度、固定价格路径、共享量预算、可配置逆向滑点 | 真实盘口队列、集合竞价、盘中临停重建、校准后的市场冲击 |
-| 费用与权益 | 内置日期费率或自定义费率；税前分红、送转、零碎股显式政策 | 个人差别化股息税、配股、要约收购、退市清算、券商账单逐笔校准 |
+| 费用与权益 | 内置日期费率或自定义费率；税前分红、送转、零碎股显式政策 | 定向赠股登记权益、停牌期碎股参考价、个人差别化股息税、配股、要约收购、退市清算、券商账单逐笔校准 |
+| 连续送转 | 当前固定桥使用原生9位数量精度 | 不规则连续送转的历史累计量可能超过9位并中断；[异常记录](docs/value-research-closeout.md) |
 | 数据质量 | 输入检查、显式日历、来源及内容指纹 | 历史 vintage PIT、分钟完整性、历史股票池与所有公司行为的上游治理 |
 | 规模与运行 | 单次共享现金组合；已测规模与结果见验证文档 | 全市场多年容量、多人服务负载、生产 SLA、券商接入及重启恢复 |
 | 证据含义 | 测试、真实供应商数据回放和账户对账各自记录 | 策略 alpha、实盘成交可实现性和生产验收需独立验证 |
@@ -165,6 +166,7 @@ python examples/validate_tushare_lake.py --root "C:\path\to\Tushare_DB" --output
 - [当前目标与后续任务](docs/superpowers/plans/2026-11-16-goal-reassessment.md)：以真实低频用例闭环为主线，明确优先级、验收和暂停条件。
 - [本地湖密集组合验收](docs/dense-lake-validation.md)：2.6.0 实库 64/128 股组合、申报限流修复及三路径对照。
 - [改造与验收进度](docs/validation-progress.md)：各批版本、实测结果、证据边界及历史记录索引。
+- [NC30研究结项](docs/value-research-closeout.md)：跨时期、五组匹配对照和晋级决定。
 
 - [分层架构](docs/architecture.md)：研究、初筛、执行核验与未来实盘的职责。
 - [能力矩阵](docs/capabilities.md)：普通股、基础可转债及证据边界。

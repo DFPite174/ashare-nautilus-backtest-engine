@@ -41,3 +41,5 @@
 | 后续研究 | 固定NC30规则，优先开展跨时期和固定对照复核，停止在当前验证期继续搜索阈值。 |
 
 执行核保持冻结，最终留出期继续封存。固定方案见[实验计划](superpowers/plans/2026-11-17-value-industry-cap.md)，数据见[聚合结果](evidence/value-industry-cap-summary.json)；完整目标、逐笔账户与逐日行业权重位于本地`../benchmark/value-industry-cap-accepted/`。复跑入口为`examples/run_value_industry_cap.py`，使用新的输出目录。
+
+跨时期与固定对照复核已收尾，最终决定见[研究结项](value-research-closeout.md)。

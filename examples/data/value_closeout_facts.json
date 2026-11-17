@@ -1,0 +1,69 @@
+{
+  "resolutions": [
+    {
+      "symbol": "601088.SH",
+      "ex_date": "20170710",
+      "expected_row_sha256": [
+        "a979c9c81661e70fd1f9372dbdb96ec1173c4e526d528616285e4b211347e359",
+        "dea9307ac2533888fe06fb93175226575465cf140c1074113a378db788079351"
+      ],
+      "canonical": {
+        "ts_code": "601088.SH",
+        "end_date": "20161231",
+        "ann_date": "20170624",
+        "div_proc": "实施",
+        "stk_div": 0.0,
+        "stk_bo_rate": 0.0,
+        "stk_co_rate": 0.0,
+        "cash_div": 2.97,
+        "cash_div_tax": 2.97,
+        "record_date": "20170707",
+        "ex_date": "20170710",
+        "pay_date": "20170710",
+        "div_listdate": null,
+        "imp_ann_date": "20170703"
+      },
+      "evidence_url": "https://static.cninfo.com.cn/finalpage/2017-07-03/1203675941.PDF",
+      "reason": "2.970 includes ordinary 0.460 and special 2.510; do not add special again"
+    }
+  ],
+  "listing_blocks": [
+    {
+      "symbol": "600710.SH",
+      "start": "20160420",
+      "resume": "20170731",
+      "start_url": "https://www.sse.com.cn/disclosure/announcement/general/c/c_20160414_4079203.shtml",
+      "resume_url": "https://static.cninfo.com.cn/finalpage/2017-07-25/1203730109.PDF"
+    },
+    {
+      "symbol": "000950.SZ",
+      "start": "20170511",
+      "resume": "20180828",
+      "start_url": "https://static.cninfo.com.cn/finalpage/2017-05-09/1203485206.PDF",
+      "resume_url": "https://static.cninfo.com.cn/finalpage/2018-08-20/1205304507.PDF"
+    }
+  ],
+  "conditional_zero_entitlement": [
+    {
+      "symbol": "600828.SH",
+      "record_date": "20170505",
+      "row_sha256": "7f1dda2fe59104439b6a030dd750b80f003c15798425a337b791d12159416272",
+      "evidence_url": "https://stock.tianyancha.com/an/40f2f69c9501847bcbab060d4e64b7b8.pdf",
+      "kind": "selective_share_transfer_or_missing_ex_date"
+    },
+    {
+      "symbol": "600828.SH",
+      "record_date": "20180327",
+      "row_sha256": "78ec6b3a789984e397bbc29d17dd87dd74aa021965c69be31321c7570125efc6",
+      "evidence_url": null,
+      "kind": "provider_missing_ex_date"
+    },
+    {
+      "symbol": "600785.SH",
+      "record_date": "20170223",
+      "row_sha256": "a738f1bd526070868643eceaa6f654ad45ac866c3923094213ef7e61c500550e",
+      "evidence_url": null,
+      "kind": "provider_missing_ex_date"
+    }
+  ]
+}
