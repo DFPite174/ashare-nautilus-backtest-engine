@@ -50,3 +50,5 @@
 | 数据修复顺序 | 优先核查缺失同比财报，记录退出原因；缺项不填零、不沿用旧TTM冒充最新值。 |
 
 本轮只完成P0研究复盘；P1的新策略规则与回测另立实验，最终留出期保持封存。公开聚合数据见[研究摘要](evidence/value-p0-fundamentals.json)，本地完整股票底稿位于`../benchmark/value-p0-fundamentals-final/private_details.json`。
+
+后续[P1固定实验](value-p1-research.md)已完成，保留NC进入行业约束研究。
