@@ -1,0 +1,57 @@
+{
+  "source_summary_sha256": "78cb27c9c3d40691d9002443c675d7a8d049acc8dd845b27d707a88d5d3abc98",
+  "script_sha256": "bae9b7976c4fbb9b5adc041b26237edc96e2f8d2905b0fa7247a5810bd501636",
+  "holdout_evaluated": false,
+  "ranking_metric": "TTM deducted parent earnings / market capitalization",
+  "audit": {
+    "target_observations": 1080,
+    "failures": {}
+  },
+  "medical": {
+    "count": 14,
+    "pnl": -177868.19,
+    "first_cash_quality_below_one": 6,
+    "first_cash_quality_negative": 0,
+    "first_ttm_at_least_twice_annual_mean": 13,
+    "end_ttm_down_over_half": 14,
+    "position_end_ttm_down_over_half": 11,
+    "first_nonrecurring_share_observations": 13,
+    "first_nonrecurring_share_over_30pct": 0,
+    "first_ttm_ocf_ratio_observations": 13,
+    "first_ttm_ocf_ratio_below_one": 7,
+    "position_end_ttm_observations": 13,
+    "local_first_ttm_mismatches": 0
+  },
+  "worst_ten": {
+    "count": 10,
+    "pnl": -212916.45,
+    "first_cash_quality_below_one": 6,
+    "first_cash_quality_negative": 2,
+    "first_ttm_at_least_twice_annual_mean": 6,
+    "end_ttm_down_over_half": 10,
+    "position_end_ttm_down_over_half": 9,
+    "first_nonrecurring_share_observations": 10,
+    "first_nonrecurring_share_over_30pct": 0,
+    "first_ttm_ocf_ratio_observations": 10,
+    "first_ttm_ocf_ratio_below_one": 5,
+    "position_end_ttm_observations": 9,
+    "local_first_ttm_mismatches": 0
+  },
+  "first_selection_cash_groups": {
+    "below_one": {
+      "count": 40,
+      "pnl": -110116.17
+    },
+    "at_least_one": {
+      "count": 88,
+      "pnl": 134676.29
+    }
+  },
+  "financial_availability": {
+    "position_end_missing_ttm_cases": 1,
+    "first_income_period_gap_cases": 1
+  },
+  "focused_cases": 19,
+  "status": "P0_REVIEW_COMPLETED",
+  "private_details_sha256": "27c1c08e6e97f771d325646469c6db4c1dee18881d092369f5df2a6ff3c0a685"
+}
