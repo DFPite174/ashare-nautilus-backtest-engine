@@ -43,20 +43,36 @@
       "resume_url": "https://static.cninfo.com.cn/finalpage/2018-08-20/1205304507.PDF"
     }
   ],
+  "no_account_entitlement": [
+    {
+      "symbol": "600399.SH",
+      "record_date": "20181226",
+      "row_sha256": "43001b1ec019b6659659fae83f7622d6b580cd689b6c08f4b57ad2b3388dcd7f",
+      "evidence_url": "https://static.cninfo.com.cn/finalpage/2018-12-21/1205682048.PDF",
+      "kind": "restructuring_shares_not_allocated_to_existing_shareholders"
+    }
+  ],
   "conditional_zero_entitlement": [
     {
       "symbol": "600828.SH",
       "record_date": "20170505",
       "row_sha256": "7f1dda2fe59104439b6a030dd750b80f003c15798425a337b791d12159416272",
-      "evidence_url": "https://stock.tianyancha.com/an/40f2f69c9501847bcbab060d4e64b7b8.pdf",
-      "kind": "selective_share_transfer_or_missing_ex_date"
+      "evidence_url": "https://static.cninfo.com.cn/finalpage/2018-03-16/1204480683.PDF",
+      "kind": "selective_share_transfer"
     },
     {
       "symbol": "600828.SH",
       "record_date": "20180327",
       "row_sha256": "78ec6b3a789984e397bbc29d17dd87dd74aa021965c69be31321c7570125efc6",
-      "evidence_url": null,
-      "kind": "provider_missing_ex_date"
+      "evidence_url": "https://vip.stock.finance.sina.com.cn/corp/view/vCB_AllBulletinDetail.php?id=5085493&stockid=600828",
+      "kind": "selective_share_transfer"
+    },
+    {
+      "symbol": "600828.SH",
+      "record_date": "20190327",
+      "row_sha256": null,
+      "evidence_url": "https://static.cninfo.com.cn/finalpage/2020-08-11/1208147777.PDF",
+      "kind": "selective_share_transfer_missing_provider_row"
     },
     {
       "symbol": "600785.SH",

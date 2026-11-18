@@ -42,11 +42,21 @@ def reconcile_history(root,facts,start,end):
     rows=table.to_pylist();symbols={r['ts_code'] for r in rows}
     rows,resolved=resolve_actions(rows,[r for r in facts['resolutions'] if r['symbol'] in symbols])
     rows,duplicates=merge_identical_actions(rows)
-    conditional=[];kept=[]
-    by_hash={r['row_sha256']:r for r in facts['conditional_zero_entitlement']}
+    first,last=start.replace('-',''),end.replace('-','')
+    declared=[r for r in facts['conditional_zero_entitlement'] if first<=r['record_date']<=last]
+    # A public disclosure can establish an event even when the provider omits it.
+    conditional=[r for r in declared if r['row_sha256'] is None]
+    kept=[];excluded=[]
+    by_hash={r['row_sha256']:r for r in declared if r['row_sha256'] is not None}
+    no_entitlement={r['row_sha256']:r for r in facts.get('no_account_entitlement', [])
+                    if first<=r['record_date']<=last}
     for row in rows:
-        rule=by_hash.get(digest(row))
-        if rule and start.replace('-','')<=rule['record_date']<=end.replace('-',''):
+        row_hash=digest(row)
+        if row_hash in no_entitlement:
+            excluded.append(no_entitlement[row_hash])
+            continue
+        rule=by_hash.get(row_hash)
+        if rule:
             conditional.append(rule)
         else: kept.append(row)
     pq.write_table(pa.Table.from_pylist(kept,schema=table.schema),action_file)
@@ -70,7 +80,7 @@ def reconcile_history(root,facts,start,end):
         schema=old.schema.append(pa.field('source_kind',pa.string())).append(pa.field('evidence_url',pa.string()))
         pq.write_table(pa.Table.from_pylist(susp,schema=schema),file)
     audit=dict(resolutions=resolved,identical_event_groups=duplicates,listing_block_sessions=inserted,
-        conditional_zero_entitlement=conditional)
+        conditional_zero_entitlement=conditional,no_account_entitlement=excluded)
     manifest_file=root/'snapshot_manifest.json'
     manifest=json.loads(manifest_file.read_text(encoding='utf-8'))
     for file in [action_file,*sorted((base/'market/suspend_d').glob('year=*/*.parquet'))]:
