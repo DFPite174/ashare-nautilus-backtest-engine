@@ -1,0 +1,30 @@
+{
+  "version": "2.7.1",
+  "old_summary_sha256": "294d021926a3ec63c69a5ef5495959e384822b94c6a7fd19238540c5ef46dfa1",
+  "replay_summary_sha256": "22e533a02455228c76621234dc84c48d91d0ad169a7405c181ced8cedc3a809d",
+  "target_bundle_sha256": "a07e07bb14b375c5e445541da925a809902b1b65b7542f1f462ab24120a5ff10",
+  "same_market_snapshot_each_phase": true,
+  "unchanged_account_paths_and_decisions": 12,
+  "completed_accounts": 13,
+  "total_accounts": 15,
+  "restored_case": {
+    "phase": "validation",
+    "name": "MC_20261019",
+    "metrics": {
+      "start": "2021-01-04",
+      "end": "2023-12-29",
+      "sessions": 727,
+      "total_return": 0.35024447999999997,
+      "annualized_return": 0.10969812455538386,
+      "max_drawdown": -0.21785855010046118,
+      "sharpe_zero_rf": 0.6422125588386681
+    },
+    "fills": 786,
+    "fees": "8108.93",
+    "account_sha256": "fecc8be520d7ebf7a7f819e715f998b244f8885fab7155491fdc9e9a6049513c",
+    "real_event_share_and_fraction_cash_reconciled": true,
+    "subsequent_sell_observed": true
+  },
+  "remaining_blocked": 2,
+  "holdout_evaluated": false
+}
