@@ -8,7 +8,7 @@ import time
 import tracemalloc
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from engine import run_backtest, OrderIntent, AShareFeeModel
+from engine import run_prepared_backtest, OrderIntent, AShareFeeModel
 from engine.tushare_lake import load_tushare_lake
 
 
@@ -44,10 +44,10 @@ def execute(root, symbols, start, end, kind, slippage=0):
         if kind=='roundtrip' and day==days[-2]:
             return [OrderIntent(bar.symbol,'SELL',int(state.positions.get(bar.symbol,0)))] if state.positions.get(bar.symbol,0) else []
         return []
+    prepared=data.prepare()
     started=time.perf_counter()
     fee=AShareFeeModel(commission_rate=.0002,min_commission=3)
-    result=run_backtest(data.instruments,data.bars,data.rules,signal,
-        trading_days=days,corporate_actions=data.corporate_actions,initial_cash=initial,
+    result=run_prepared_backtest(prepared,signal,initial_cash=initial,
         participation_rate=.01,fee_model=fee,slippage_bps=slippage,
         strategy_id=f'engineering-{kind}',strategy_params={'quantity':'100; KCB 200'},
         data_snapshot_id=data.snapshot['snapshot_id'])
@@ -91,8 +91,8 @@ def benchmark(root,symbols,start,end):
         assert state.history[bar.symbol][-1].end==bar.end
         return []
     tracemalloc.start();started=time.perf_counter()
-    result=run_backtest(data.instruments,data.bars,data.rules,signal,corporate_actions=data.corporate_actions,
-        trading_days=data.trading_days,data_snapshot_id=data.snapshot['snapshot_id'],strategy_id='no-order-load')
+    result=run_prepared_backtest(data.prepare(),signal,
+        data_snapshot_id=data.snapshot['snapshot_id'],strategy_id='no-order-load')
     elapsed=time.perf_counter()-started;_,peak=tracemalloc.get_traced_memory();tracemalloc.stop()
     check_cash(result,100000)
     assert calls==len(data.bars)

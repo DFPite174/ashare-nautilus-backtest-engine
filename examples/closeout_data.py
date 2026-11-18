@@ -1,12 +1,12 @@
 """Explicit historical data reconciliation; original lake and execution core stay unchanged."""
 from collections import defaultdict
 from datetime import date
-from decimal import Decimal as D
 import json
 from pathlib import Path
 import pyarrow as pa
 import pyarrow.parquet as pq
 from engine.reproducibility import digest
+from engine.company_action_admission import filter_entitlement_rows
 from examples.value_data_snapshot import resolve_actions, sha
 
 
@@ -26,16 +26,6 @@ def merge_identical_actions(rows):
     return output,audit
 
 
-def verify_zero_entitlements(nav,events):
-    by_date={r['date']:r for r in nav}
-    for event in events:
-        day=event['record_date'];day=day[:4]+'-'+day[4:6]+'-'+day[6:]
-        if day not in by_date: raise ValueError('Missing entitlement record snapshot')
-        quantity=D(by_date[day]['holdings'].get(event['symbol'],0))
-        if quantity:
-            raise ValueError(f"Unsupported entitlement: {event['symbol']} {day} quantity={quantity}")
-
-
 def reconcile_history(root,facts,start,end):
     root=Path(root);base=root/'lake'
     action_file=base/'actions/dividend.parquet';table=pq.read_table(action_file)
@@ -43,22 +33,8 @@ def reconcile_history(root,facts,start,end):
     rows,resolved=resolve_actions(rows,[r for r in facts['resolutions'] if r['symbol'] in symbols])
     rows,duplicates=merge_identical_actions(rows)
     first,last=start.replace('-',''),end.replace('-','')
-    declared=[r for r in facts['conditional_zero_entitlement'] if first<=r['record_date']<=last]
-    # A public disclosure can establish an event even when the provider omits it.
-    conditional=[r for r in declared if r['row_sha256'] is None]
-    kept=[];excluded=[]
-    by_hash={r['row_sha256']:r for r in declared if r['row_sha256'] is not None}
-    no_entitlement={r['row_sha256']:r for r in facts.get('no_account_entitlement', [])
-                    if first<=r['record_date']<=last}
-    for row in rows:
-        row_hash=digest(row)
-        if row_hash in no_entitlement:
-            excluded.append(no_entitlement[row_hash])
-            continue
-        rule=by_hash.get(row_hash)
-        if rule:
-            conditional.append(rule)
-        else: kept.append(row)
+    kept,conditional,excluded=filter_entitlement_rows(rows,facts,symbols,first,last)
+    excluded=[event for event in excluded if event in facts.get('no_account_entitlement', ())]
     pq.write_table(pa.Table.from_pylist(kept,schema=table.schema),action_file)
     calendar=pq.read_table(base/'meta/trade_cal.parquet').to_pylist()
     days=sorted(r['cal_date'] for r in calendar if r['exchange']=='SSE' and r['is_open']==1)

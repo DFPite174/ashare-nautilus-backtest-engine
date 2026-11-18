@@ -10,7 +10,7 @@ import sys
 import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from engine import (OrderIntent, TimedOrderIntent, compare_complete_backtests, prepare_backtest,
+from engine import (OrderIntent, TimedOrderIntent, compare_complete_backtests,
                     prepare_order_tape, run_order_tape, run_prepared_backtest)
 from engine.backtest import at
 from engine.tushare_lake import load_tushare_lake, parse_day
@@ -84,8 +84,7 @@ def main():
                       bars=len(data.bars), actions=len(data.corporate_actions), phase='preparing')
         save()
         begin = time.perf_counter()
-        prepared = prepare_backtest(data.instruments, data.bars, data.rules,
-            corporate_actions=data.corporate_actions, trading_days=data.trading_days)
+        prepared = data.prepare()
         report['prepare_seconds'] = time.perf_counter() - begin
         if len(prepared.sessions) != args.sessions:
             raise ValueError('Prepared session count differs from requested official sessions')

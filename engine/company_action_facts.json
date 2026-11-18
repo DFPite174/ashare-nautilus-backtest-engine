@@ -57,21 +57,21 @@
       "symbol": "600828.SH",
       "record_date": "20170505",
       "row_sha256": "7f1dda2fe59104439b6a030dd750b80f003c15798425a337b791d12159416272",
-      "evidence_url": "https://static.cninfo.com.cn/finalpage/2018-03-16/1204480683.PDF",
+      "evidence_url": "https://data.eastmoney.com/notices/detail/600828/AN201707110710831030.html",
       "kind": "selective_share_transfer"
     },
     {
       "symbol": "600828.SH",
       "record_date": "20180327",
       "row_sha256": "78ec6b3a789984e397bbc29d17dd87dd74aa021965c69be31321c7570125efc6",
-      "evidence_url": "https://vip.stock.finance.sina.com.cn/corp/view/vCB_AllBulletinDetail.php?id=5085493&stockid=600828",
+      "evidence_url": "https://data.eastmoney.com/notices/detail/600828/AN201805101141219006.html",
       "kind": "selective_share_transfer"
     },
     {
       "symbol": "600828.SH",
       "record_date": "20190327",
       "row_sha256": null,
-      "evidence_url": "https://static.cninfo.com.cn/finalpage/2020-08-11/1208147777.PDF",
+      "evidence_url": "https://data.eastmoney.com/notices/detail/600828/AN201905161330497311.html",
       "kind": "selective_share_transfer_missing_provider_row"
     },
     {

@@ -55,6 +55,28 @@ def test_explicit_full_day_suspension_is_not_missing_data(tmp_path):
     assert data.rules['600000.SH',data.trading_days[1]]['trade_status']=='SUSPENDED'
 
 
+def test_missing_provider_entitlement_checks_both_prepared_entry_points(tmp_path, monkeypatch):
+    from engine import OrderIntent, TimedOrderIntent, run_order_tape, run_prepared_backtest
+    import engine.tushare_lake as adapter
+
+    lake(tmp_path)
+    event = dict(symbol='600000.SH', record_date='20250507', row_sha256=None,
+                 kind='selective_share_transfer_missing_provider_row')
+    monkeypatch.setattr(adapter, 'load_company_action_facts',
+                        lambda: {'conditional_zero_entitlement': [event], 'no_account_entitlement': []},
+                        raising=False)
+    data = adapter.load_tushare_lake(tmp_path, ['600000.SH'], '2025-05-06', '2025-05-08')
+    prepared = data.prepare()
+    decision = data.bars[0].end
+    intent = OrderIntent('600000.SH', 'BUY', 100)
+    run_prepared_backtest(prepared, signal=lambda bar, state: [])
+    run_order_tape(prepared, [])
+    with pytest.raises(ValueError, match=r'600000.SH 2025-05-07 quantity=100'):
+        run_prepared_backtest(prepared, signal=lambda bar, state: [intent] if bar.end == decision else [])
+    with pytest.raises(ValueError, match=r'600000.SH 2025-05-07 quantity=100'):
+        run_order_tape(prepared, [TimedOrderIntent(decision, intent)])
+
+
 def test_missing_calendar_date_cannot_silently_drop_market_bar(tmp_path):
     from engine.tushare_lake import load_tushare_lake
     lake(tmp_path)

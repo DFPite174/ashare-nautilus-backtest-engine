@@ -1,7 +1,7 @@
-from decimal import Decimal as D
 import pytest
+from engine.company_action_admission import filter_entitlement_rows, verify_zero_entitlements
 from engine.reproducibility import digest
-from examples.closeout_data import merge_identical_actions, reconcile_history, verify_zero_entitlements
+from examples.closeout_data import merge_identical_actions, reconcile_history
 
 
 def test_only_disclosure_metadata_can_be_consolidated():
@@ -27,8 +27,8 @@ def test_disclosed_entitlement_is_checked_even_when_provider_omits_row(tmp_path)
     import pyarrow.parquet as pq
 
     event = dict(symbol='600828.SH', record_date='20190327', row_sha256=None)
-    ordinary = dict(ts_code='600828.SH', ex_date='20190423')
-    restructuring = dict(ts_code='600399.SH', ex_date='20181227')
+    ordinary = dict(ts_code='600828.SH', ex_date='20190423', record_date='20190422')
+    restructuring = dict(ts_code='600399.SH', ex_date='20181227', record_date='20181226')
     exclusion = dict(symbol='600399.SH', record_date='20181226', row_sha256=digest(restructuring))
     for directory in ('actions', 'meta'):
         (tmp_path / 'lake' / directory).mkdir(parents=True)
@@ -42,6 +42,8 @@ def test_disclosed_entitlement_is_checked_even_when_provider_omits_row(tmp_path)
     _, events = reconcile_history(tmp_path, facts, '2018-01-01', '2019-12-31')
     assert pq.read_table(dividends).to_pylist() == [ordinary]
     assert events == [event]
+    with pytest.raises(ValueError, match='Company action source changed'):
+        filter_entitlement_rows([dict(restructuring, stk_div=.7)], facts, {'600399.SH'}, '20180101', '20191231')
     with pytest.raises(ValueError, match=r'600828.SH 2019-03-27 quantity=8200'):
         verify_zero_entitlements([dict(date='2019-03-27', holdings={'600828.SH': '8200'})], events)
 

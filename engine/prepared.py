@@ -43,6 +43,7 @@ class PreparedBacktest:
     validation_version: str
     bars_by_day: Mapping
     daily_only: bool
+    unresolved_entitlements: tuple
 
     def __new__(cls, *args, **kwargs):
         raise TypeError("Use prepare_backtest() to create validated inputs")
@@ -53,7 +54,7 @@ class PreparedBacktest:
             raise ValueError("Market validator changed; prepare inputs again")
 
 
-def prepare_backtest(instruments, bars, rules, *, corporate_actions=(), trading_days=None):
+def prepare_backtest(instruments, bars, rules, *, corporate_actions=(), trading_days=None, unresolved_entitlements=()):
     """Detach inputs, validate market coverage once, and cache their content hash."""
     from engine.backtest import BacktestBar, _validate, TZ, at
     from contracts import Instrument, ConvertibleBondInstrument, CorporateAction
@@ -84,13 +85,24 @@ def prepare_backtest(instruments, bars, rules, *, corporate_actions=(), trading_
         opening,closing=daily_bounds[day]
         if bar.start!=opening or bar.end!=closing:daily_only=False
     bars_by_day=MappingProxyType({day:tuple(by_day[day]) for day in sessions})
-    input_sha256 = digest({'instruments': sorted(instruments, key=lambda i: i.symbol),
+    unresolved_entitlements = tuple(_freeze(event) for event in unresolved_entitlements)
+    checked = set()
+    for event in unresolved_entitlements:
+        key = event['symbol'], date.fromisoformat(event['record_date'])
+        if key in checked or key[0] not in master or key[1] not in bars_by_day:
+            raise ValueError(f'Invalid or duplicate entitlement record session: {key}')
+        checked.add(key)
+    market_input = {'instruments': sorted(instruments, key=lambda i: i.symbol),
         'bars': sorted(bars, key=lambda b: (b.start, b.symbol)), 'rules': frozen_rules,
-        'actions': sorted(actions, key=lambda a: (a.symbol, a.ex_date)), 'calendar': sessions})
+        'actions': sorted(actions, key=lambda a: (a.symbol, a.ex_date)), 'calendar': sessions}
+    if unresolved_entitlements:
+        market_input['unresolved_entitlements'] = unresolved_entitlements
+    input_sha256 = digest(market_input)
     prepared = object.__new__(PreparedBacktest)
     for key, value in dict(instruments=instruments, bars=bars, actions=actions, sessions=sessions,
                            rules=frozen_rules, master=MappingProxyType(master),
                            input_sha256=input_sha256, validation_version=_validation_version(_validate),
-                           bars_by_day=bars_by_day,daily_only=daily_only).items():
+                           bars_by_day=bars_by_day,daily_only=daily_only,
+                           unresolved_entitlements=unresolved_entitlements).items():
         object.__setattr__(prepared, key, value)
     return prepared

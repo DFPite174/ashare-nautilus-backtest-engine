@@ -1,5 +1,5 @@
 """Read-only adapter for the Tushare Parquet lake layout; no network or secrets."""
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from collections import namedtuple
 from datetime import datetime, timedelta
 from decimal import Decimal
@@ -9,6 +9,8 @@ import pyarrow.dataset as ds
 
 from contracts import Instrument, Venue, CorporateAction
 from engine.backtest import BacktestBar, at
+from engine.company_action_admission import filter_entitlement_rows, load_company_action_facts
+from engine.prepared import prepare_backtest
 from engine.reproducibility import digest
 
 _DailyRow = namedtuple('_DailyRow', 'ts_code trade_date open high low close vol volume_shares')
@@ -37,6 +39,12 @@ class LakeInputs:
     trading_days: list
     corporate_actions: list
     snapshot: dict
+    unresolved_entitlements: list = field(default_factory=list)
+
+    def prepare(self):
+        """Prepare input shared by callback and frozen-order replay."""
+        return prepare_backtest(self.instruments, self.bars, self.rules, trading_days=self.trading_days,
+            corporate_actions=self.corporate_actions, unresolved_entitlements=self.unresolved_entitlements)
 
 
 def load_tushare_lake(root, symbols, start, end):
@@ -129,6 +137,8 @@ def load_tushare_lake(root, symbols, start, end):
     # Include events already ex-dividend but paid/listed during the sample so they
     # cannot silently enter without the record-date and holding state required.
     action_rows=read('actions/dividend.parquet',codes)
+    action_rows, unresolved, excluded = filter_entitlement_rows(
+        action_rows, load_company_action_facts(), set(symbols), start.strftime('%Y%m%d'), end.strftime('%Y%m%d'))
     actions={};duplicates=0;unimplemented=0
     for r in action_rows:
         status=str(r.get('div_proc') or '').strip()
@@ -164,6 +174,8 @@ def load_tushare_lake(root, symbols, start, end):
         security_universe='explicit symbols; current master listing date only',
         deduplicated_actions=duplicates,excluded_unimplemented_actions=unimplemented,
         partial_suspension_policy='DAY_BLOCKED')
+    if unresolved or excluded:
+        snapshot.update(unresolved_entitlements=unresolved, excluded_entitlement_rows=excluded)
     snapshot['snapshot_id']=digest(snapshot)
     return LakeInputs(instruments,sorted(bars,key=lambda b:(b.start,b.symbol)),rules,sessions,
-                      sorted(actions.values(),key=lambda a:(a.ex_date,a.symbol)),snapshot)
+                      sorted(actions.values(),key=lambda a:(a.ex_date,a.symbol)),snapshot,unresolved)

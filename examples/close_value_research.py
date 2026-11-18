@@ -15,7 +15,6 @@ import pyarrow.dataset as ds
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from contracts.models import TargetWeights
-from engine import prepare_backtest
 from engine.reproducibility import digest
 from engine.tushare_lake import load_tushare_lake
 from examples.run_value_p1 import treatment_frames, economic_path
@@ -23,7 +22,8 @@ from examples.run_value_industry_cap import capped_weights
 from examples.integrate_value_strategy import replay
 from examples.research_workflow import execution_outcomes
 from examples.value_data_snapshot import sha, check_output_location, build_snapshot
-from examples.closeout_data import reconcile_history, apply_declared_lifecycle_rules, verify_zero_entitlements
+from examples.closeout_data import reconcile_history, apply_declared_lifecycle_rules
+from engine.company_action_admission import FACTS_PATH
 
 
 def period_metrics(nav,first_day):
@@ -128,7 +128,7 @@ def main():
     provenance=dict(bundle_sha256=digest(frozen),plan_sha256=sha(plan),holdout_evaluated=False)
     (args.output/'frozen_targets.json').write_text(json.dumps(frozen,indent=2),encoding='utf-8')
     resolutions=read_json(repo/'examples/data/value_action_resolutions.json')
-    facts=read_json(repo/'examples/data/value_closeout_facts.json')
+    facts=read_json(FACTS_PATH)
     report=dict(status='RUNNING',holdout_evaluated=False,plan_sha256=sha(plan),script_sha256=sha(__file__),
         target_bundle_sha256=provenance['bundle_sha256'],early_annual_rows=len(extra),phases={})
     errors=[]
@@ -139,7 +139,7 @@ def main():
         resolution_file=destination/'action_resolutions.json'
         resolution_file.write_text(json.dumps(dict(resolutions=[r for r in resolutions['resolutions'] if r['symbol'] in union])),encoding='utf-8')
         snapshot=build_snapshot(args.root,destination/'derived_lake',union,warmup,last,resolution_file)
-        snapshot,conditional=reconcile_history(destination/'derived_lake',facts,warmup,last)
+        snapshot,_=reconcile_history(destination/'derived_lake',facts,warmup,last)
         rows=[];report['phases'][phase]=dict(first_execution=first_days[phase],snapshot_sha256=snapshot['snapshot_sha256'],runs=rows)
         for name,targets in groups.items():
             try:
@@ -147,9 +147,8 @@ def main():
                 data=load_tushare_lake(destination/'derived_lake',symbols,warmup,last)
                 apply_declared_lifecycle_rules(data,facts)
                 data.corporate_actions=[a.model_copy(update={'fractional_policy':'cash_in_lieu'}) if a.bonus_ratio+a.reserve_ratio>0 else a for a in data.corporate_actions]
-                prepared=prepare_backtest(data.instruments,data.bars,data.rules,trading_days=data.trading_days,corporate_actions=data.corporate_actions)
+                prepared=data.prepare()
                 result,decisions=replay(data,prepared,targets,provenance)
-                verify_zero_entitlements(result.daily_nav,[e for e in conditional if e['symbol'] in symbols])
                 actual=result.to_dict()
                 if phase=='validation' and name=='NC30':
                     if economic_path(actual)!=economic_path(old['result']): raise ValueError('Frozen validation NC30 financial path differs')

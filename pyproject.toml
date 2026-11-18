@@ -24,7 +24,7 @@ test = ["pytest>=8.0.0"]
 packages = ["engine", "contracts"]
 
 [tool.setuptools.package-data]
-engine = ["split_native.cp312-win_amd64.pyd", "split_native.pyx", "SPLIT_BUILD.json"]
+engine = ["split_native.cp312-win_amd64.pyd", "split_native.pyx", "SPLIT_BUILD.json", "company_action_facts.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

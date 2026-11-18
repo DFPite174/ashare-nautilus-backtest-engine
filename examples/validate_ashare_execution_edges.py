@@ -8,7 +8,7 @@ from zoneinfo import ZoneInfo
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from engine import (
-    OrderIntent, TimedOrderIntent, compare_complete_backtests, prepare_backtest,
+    OrderIntent, TimedOrderIntent, compare_complete_backtests,
     prepare_order_tape, run_order_tape, run_prepared_backtest,
 )
 from engine.backtest import at
@@ -19,8 +19,7 @@ from examples.validate_tushare_lake import check_cash
 def replay(root, start, end, orders):
     symbols = {intent.symbol for intents in orders.values() for intent in intents}
     data = load_tushare_lake(root, symbols, start, end)
-    prepared = prepare_backtest(data.instruments, data.bars, data.rules,
-        trading_days=data.trading_days, corporate_actions=data.corporate_actions)
+    prepared = data.prepare()
     schedule = {date.fromisoformat(day): intents for day, intents in orders.items()}
     tape = prepare_order_tape(prepared, [
         TimedOrderIntent(at(day, 15), intent) for day, intents in schedule.items() for intent in intents

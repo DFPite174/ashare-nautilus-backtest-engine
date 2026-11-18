@@ -592,6 +592,9 @@ def _run_backtest(instruments, bars, rules, signal=None, *, corporate_actions=()
                 liquidity.events.clear();liquidity.remaining.clear();liquidity.active.clear();liquidity.intrabar.clear()
             eng.end()
         if len(strategy.nav)!=len(sessions):raise RuntimeError("Missing daily reconciliation")
+        if _prepared is not None and _prepared.unresolved_entitlements:
+            from engine.company_action_admission import verify_zero_entitlements
+            verify_zero_entitlements(strategy.nav, _prepared.unresolved_entitlements)
         native_cash=D(str(eng.portfolio.account(SIM).balance_total(CNY).as_double()))
         orders=[{'id':str(o.client_order_id),'status':o.status.name,'quantity':str(o.quantity),'filled_quantity':str(o.filled_qty),
                  **({'intent_id':strategy.order_intent_ids[str(o.client_order_id)]} if str(o.client_order_id) in strategy.order_intent_ids else {})} for o in eng.cache.orders()]

@@ -89,6 +89,8 @@ python examples/replay_order_tape.py --bars examples/data/bars_daily.csv --rules
 
 通过 `prepare_backtest(...)` 固定校验后的输入，再用 `run_prepared_backtest(prepared, portfolio_signal=..., data_mode="sparse")` 运行候选；每轮重新建立账户和订单状态。完整用法见 [准备数据复用](docs/prepared-data.md)。
 
+本地 Tushare 输入用 `load_tushare_lake(...).prepare()` 准备，回调和冻结订单回放均可使用该结果，并检查已知但缺少账户分配依据的公司行为。
+
 | `data_mode` | 数据处理方式 |
 | --- | --- |
 | `full`（默认） | 全量装载合成事件，保留原调用行为 |
