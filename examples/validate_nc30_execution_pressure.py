@@ -82,15 +82,7 @@ def summarize(result, decisions, outcomes):
                 months=months)
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--closeout', type=Path, required=True)
-    parser.add_argument('--output', type=Path, required=True)
-    args = parser.parse_args()
-    root = args.closeout.resolve()
-    out = check_output_location(args.output, root)
-    if out.exists() and any(out.iterdir()):
-        raise ValueError('Use a fresh output directory')
+def load_frozen_nc30(root):
     prior = read(root/'summary.json')
     bundle = read(root/'frozen_targets.json')
     targets = [TargetWeights(**r) for r in bundle['validation']['NC30']]
@@ -113,12 +105,25 @@ def main():
     apply_declared_lifecycle_rules(data, load_company_action_facts())
     data.corporate_actions = [a.model_copy(update={'fractional_policy':'cash_in_lieu'})
                               if a.bonus_ratio+a.reserve_ratio>0 else a for a in data.corporate_actions]
+    return data, targets, reference, prior['target_bundle_sha256'], snapshot['snapshot_sha256']
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--closeout', type=Path, required=True)
+    parser.add_argument('--output', type=Path, required=True)
+    args = parser.parse_args()
+    root = args.closeout.resolve()
+    out = check_output_location(args.output, root)
+    if out.exists() and any(out.iterdir()):
+        raise ValueError('Use a fresh output directory')
+    data, targets, reference, bundle_sha, snapshot_sha = load_frozen_nc30(root)
     prepared = data.prepare()
     out.mkdir(parents=True, exist_ok=True)
-    report = dict(target_bundle_sha256=digest(bundle), snapshot_sha256=snapshot['snapshot_sha256'],
-                  decisions=len(targets), symbols=len(symbols), holdout_evaluated=False, scenarios={})
+    report = dict(target_bundle_sha256=bundle_sha, snapshot_sha256=snapshot_sha,
+                  decisions=len(targets), symbols=len(data.instruments), holdout_evaluated=False, scenarios={})
     for name, (participation, slippage) in SCENARIOS.items():
-        result, decisions = replay(data, prepared, targets, dict(bundle_sha256=digest(bundle)),
+        result, decisions = replay(data, prepared, targets, dict(bundle_sha256=bundle_sha),
             participation_rate=participation, slippage_bps=slippage, record_prices=True)
         actual = result.to_dict()
         if name=='baseline':

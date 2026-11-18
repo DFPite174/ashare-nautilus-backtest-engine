@@ -49,4 +49,20 @@ python examples/validate_ashare_execution_edges.py --root $tushareRoot
 python examples/validate_nc30_execution_pressure.py --closeout $closeoutPath --output $newOutputPath
 ```
 
-下一阶段基准性能只覆盖离线回放。优先分开测量同一批目标的数据读取、准备、执行与结果导出，随后决定是否需要优化。
+## NC30 离线回放性能
+
+在 Windows x64、Core Ultra 7 255HX、Python 3.12.10、NautilusTrader 1.231.0 上复测同一验证期快照。两条路径各运行三个独立进程，依次运行。每轮覆盖 102 股、750 个日边界（含暖启动）、75,666 根日线、296 条公司行为、955 条意图。两条路径的委托、949 笔成交、6 笔拒单、逐日账户及权益流水相同。
+
+| 回放入口 | 核验与读取 | 准备 | 执行与对账 | 导出账户 | 加载到导出总计 | 进程峰值工作集 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 账户反馈（稀疏行情） | 1.073 s | 2.173 s | 5.370 s | 0.136 s | 8.773 s | 427.1 MiB |
+| 冻结数量指令 | 1.083 s | 2.173 s | 3.682 s | 0.136 s | 6.975 s | 416.9 MiB |
+
+表中每列为三次的中位数。总耗时范围分别为 8.732–8.801 秒和 6.655–7.317 秒，最高进程工作集分别为 428.7 MiB 和 417.9 MiB。读取含冻结文件完整性核验，准备含市场校验和订单带编译，执行含原生日终对账。账户反馈路径同时计算调仓指令并运行策略回放的额外权益检查。计时止于 JSON 写入，进程导入及导出后与原账户的逐项比较在计时区间之外，操作系统文件缓存未清空。
+
+冻结指令将投递市场事件从 155,144 个降至 47,584 个，适合已经确定数量的复验。目标权重需要按实际成交和可用资金调整时，使用账户反馈入口。当前这两类候选复验在本机均低于 9 秒，保留现有执行模型。多候选共用同一市场快照时，可复用一次 `PreparedBacktest`。扩大股票池或订单密度后，再按代表性负载重新定位耗时。
+
+```powershell
+python examples/benchmark_nc30_replay.py --closeout $closeoutPath --output $feedbackOutput --mode feedback
+python examples/benchmark_nc30_replay.py --closeout $closeoutPath --output $ordersOutput --mode orders
+```
