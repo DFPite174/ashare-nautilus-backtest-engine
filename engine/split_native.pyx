@@ -5,12 +5,21 @@ This uses the 1.231.0 Cython ABI. It is not a public upstream API. The caller mu
 refresh native cache/portfolio and persist/replay the corporate-action journal.
 Original fills are preserved, and money/realized PnL are never rewritten here.
 """
-from decimal import Decimal,ROUND_FLOOR
+from decimal import Decimal, ROUND_FLOOR, ROUND_HALF_EVEN
 from libc.stdint cimport uint64_t
 from nautilus_trader.model.position cimport Position
 from nautilus_trader.model.objects cimport Quantity
 from nautilus_trader.model.objects import Quantity as PyQuantity
 from nautilus_trader.model.instruments import Equity
+
+
+cdef Quantity _historical_quantity(value):
+    value = value.normalize()
+    # The pinned NT wheel supports at most nine fractional digits in Quantity.
+    if value.as_tuple().exponent < -9:
+        value = value.quantize(Decimal("0.000000001"), rounding=ROUND_HALF_EVEN).normalize()
+    return PyQuantity.from_str(format(value, "f"))
+
 
 def apply_split(Position p, ratio, uint64_t ts_event, instrument, fractional_policy='reject'):
     if not isinstance(instrument,Equity) or instrument.id!=p.instrument_id:
@@ -32,9 +41,9 @@ def apply_split(Position p, ratio, uint64_t ts_event, instrument, fractional_pol
     # Validate/allocate every replacement before changing the native object.
     cdef Quantity q=PyQuantity.from_str(str(whole))
     # Historic turnover may be fractional in new units even when the live holding is integer.
-    cdef Quantity peak=PyQuantity.from_str(format(quantities[1].normalize(),'f'))
-    cdef Quantity buys=PyQuantity.from_str(format(quantities[2].normalize(),'f'))
-    cdef Quantity sells=PyQuantity.from_str(format(quantities[3].normalize(),'f'))
+    cdef Quantity peak=_historical_quantity(quantities[1])
+    cdef Quantity buys=_historical_quantity(quantities[2])
+    cdef Quantity sells=_historical_quantity(quantities[3])
     cdef double r=float(ratio)
     p.quantity=q
     p.peak_qty=peak

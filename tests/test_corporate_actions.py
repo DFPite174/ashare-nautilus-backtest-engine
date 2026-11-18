@@ -26,7 +26,7 @@ from nautilus_trader.model.enums import (
     PriceType,
     TimeInForce,
 )
-from nautilus_trader.model.identifiers import InstrumentId, PositionId, Symbol, Venue, TraderId
+from nautilus_trader.model.identifiers import InstrumentId, PositionId, Symbol, Venue, TradeId, TraderId
 from nautilus_trader.model.instruments import Equity
 from nautilus_trader.model.objects import Money, Price, Quantity
 from nautilus_trader.model.position import Position
@@ -73,6 +73,39 @@ def test_split_native_loading_and_execution():
     assert pos.avg_px_open == 50.0
     # 经济价值守恒：200 股 * 50.0 元 = 100 股 * 100.0 元 = 10,000 元
     assert float(pos.quantity) * pos.avg_px_open == 10000.0
+
+
+def test_consecutive_splits_keep_whole_holding_and_exact_fraction():
+    inst = TestInstrumentProvider.equity()
+    fill = TestEventStubs.order_filled(
+        order=TestExecStubs.market_order(instrument=inst),
+        instrument=inst,
+        last_qty=Quantity.from_int(1000),
+        last_px=Price.from_str("100.00"),
+        position_id=PositionId("P-PRECISION"),
+    )
+    pos = Position(inst, fill)
+    bridge = load_bridge()
+    sell = TestExecStubs.market_order(instrument=inst, order_side=OrderSide.SELL)
+    pos.apply(TestEventStubs.order_filled(order=sell, instrument=inst, last_qty=Quantity.from_int(101),
+        last_px=Price.from_str("90.00"), position_id=pos.id, trade_id=TradeId("PRE-SPLIT-SELL"),
+        ts_event=pos.ts_last + 1))
+    bridge.apply_split(pos, Decimal("1.23456789"), pos.ts_last + 1, inst, "cash_in_lieu")
+    result = bridge.apply_split(pos, Decimal("1.4983573"), pos.ts_last + 1, inst, "cash_in_lieu")
+    whole, fraction = divmod(Decimal(1109) * Decimal("1.4983573"), 1)
+    assert pos.quantity.as_decimal() == whole
+    assert Decimal(result["fractional_quantity"]) == fraction
+    peak = (Decimal(1000) * Decimal("1.23456789") * Decimal("1.4983573")).quantize(Decimal(".000000001"))
+    assert pos.peak_qty.as_decimal() == peak
+    sell = TestExecStubs.market_order(instrument=inst, order_side=OrderSide.SELL)
+    pos.apply(TestEventStubs.order_filled(order=sell, instrument=inst, last_qty=Quantity.from_int(100),
+        last_px=Price.from_str("100.00"), position_id=pos.id, trade_id=TradeId("SPLIT-SELL"),
+        ts_event=pos.ts_last + 1))
+    assert pos.quantity.as_decimal() == whole - 100
+    combined_ratio = Decimal("1.23456789") * Decimal("1.4983573")
+    historical_sales = (101 * combined_ratio).quantize(Decimal(".000000001"))
+    expected_close = (90 / combined_ratio * historical_sales + 100 * 100) / (historical_sales + 100)
+    assert pos.avg_px_close == pytest.approx(float(expected_close), abs=1e-12, rel=0)
 
 
 def test_corporate_action_share_listing_date_delays_tradable():
