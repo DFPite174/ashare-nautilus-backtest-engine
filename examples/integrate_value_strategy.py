@@ -84,7 +84,7 @@ def decision_prices(closed, state, symbols):
     return prices
 
 
-def replay(data, prepared, targets, provenance):
+def replay(data, prepared, targets, provenance, *, participation_rate=.01, slippage_bps=10, record_prices=False):
     schedule = {t.signal_date: t for t in targets}
     decisions, seen = [], set()
     days = data.trading_days
@@ -101,8 +101,9 @@ def replay(data, prepared, targets, provenance):
             raise ValueError('Upstream execution date differs from official next session')
         symbols = set(target.weights) | set(state.positions)
         rules = {s: DailyMarketRule(**data.rules[s, day]) for s in symbols}
+        prices = decision_prices(closed, state, symbols)
         plan = plan_rebalance(target, cash=state.available_cash, holdings=state.positions,
-            sellable=state.sellable, prices=decision_prices(closed,state,symbols),
+            sellable=state.sellable, prices=prices,
             rules=rules, valuation_at=state.as_of, decision_at=state.as_of,
             cash_reserve=D(0), receivables=state.receivables)
         intents = [replace(i, intent_id=f'{day}:{i.symbol}:{i.side}') for i in plan.intents]
@@ -111,9 +112,11 @@ def replay(data, prepared, targets, provenance):
             holdings=dict(state.positions), sellable=dict(state.sellable), cash=str(state.available_cash),
             nav=str(state.nav), allocations=[asdict(a) for a in plan.allocations],
             intents=[asdict(i) for i in intents]))
+        if record_prices:
+            decisions[-1]['decision_prices'] = prices
         return intents
     result = run_prepared_backtest(prepared, portfolio_signal=signal, initial_cash=D(1000000),
-        participation_rate=.01, slippage_bps=10, data_mode='sparse',
+        participation_rate=participation_rate, slippage_bps=slippage_bps, data_mode='sparse',
         strategy_id=targets[0].strategy_id, strategy_params=dict(target_bundle=provenance['bundle_sha256'],
             policy='one submission; no chase; next month actual account feedback'),
         data_snapshot_id=data.snapshot['snapshot_id'])
