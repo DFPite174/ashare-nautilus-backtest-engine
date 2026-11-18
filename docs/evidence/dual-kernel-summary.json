@@ -1,0 +1,101 @@
+{
+  "common": {
+    "equal": true,
+    "first_difference": null,
+    "money_tolerance": "0.0000001 CNY",
+    "fills": 4,
+    "sessions": 7
+  },
+  "vectorbt": "0.28.1",
+  "source_target_sha256": "37db7fa215b8c4f5e7f4bbb40bf754c6f9fd10227e02334bbc36d0b675773f92",
+  "source_snapshot_id": "1a8af8b986b51f1362e6b41f9f3019aa1027d58d2ccf86310048c58b5c75ccf9",
+  "source_candidate_sha256": {
+    "V": "6feb4b697271ebfbc125235c8dea75eb71dc069fb37ead45c362b5350d1f9c5e",
+    "R30": "a2fe1bcbec1587bf06da8d56648895606ee2d8de8449af49c6b3f1eb95d5bb6f"
+  },
+  "script_sha256": "c7f964e746d91b8ae450b59e7bcd3c4b1cc70b08d488175e45d4fe9bd9d60467",
+  "symbols": 173,
+  "holdout_evaluated": false,
+  "vector_process_seconds": 9.634098299997277,
+  "vector_work_seconds": 3.188646400005382,
+  "event_prepare_seconds": 3.843743199999153,
+  "runs": {
+    "V": {
+      "fast": {
+        "total_return": -0.20397764538177932,
+        "max_drawdown": -0.3822463160614682,
+        "fills": 975,
+        "fees": 9599.68738178,
+        "execution_days": 36,
+        "missing_target_stock_days": 1,
+        "residual_stock_days": 4,
+        "mean_absolute_stock_weight_gap": 0.03976443196409715
+      },
+      "event": {
+        "total_return": 0.024560120000000074,
+        "max_drawdown": -0.23790341845974528,
+        "fills": 978,
+        "fees": 14780.43,
+        "execution_days": 36,
+        "missing_target_stock_days": 3,
+        "residual_stock_days": 6,
+        "mean_absolute_stock_weight_gap": 0.04113759365297994
+      },
+      "event_seconds": 10.921792100001767,
+      "event_matches_frozen": true,
+      "event_rejections": {
+        "INSUFFICIENT_CASH_WITH_FEES": 3,
+        "LIMIT_DOWN_CLOSE": 1,
+        "LIMIT_UP_CLOSE": 1,
+        "SUSPENDED": 3
+      },
+      "event_planning": {
+        "UNITS": 1052,
+        "INACTIVE": 2,
+        "CASH_SHORTAGE": 3
+      }
+    },
+    "R30": {
+      "fast": {
+        "total_return": 0.18319230800980058,
+        "max_drawdown": -0.29601369020360935,
+        "fills": 743,
+        "fees": 5423.4739902,
+        "execution_days": 36,
+        "missing_target_stock_days": 0,
+        "residual_stock_days": 0,
+        "mean_absolute_stock_weight_gap": 0.0366913947980831
+      },
+      "event": {
+        "total_return": 0.3764247599999999,
+        "max_drawdown": -0.2946755549301586,
+        "fills": 708,
+        "fees": 6346.86,
+        "execution_days": 36,
+        "missing_target_stock_days": 4,
+        "residual_stock_days": 0,
+        "mean_absolute_stock_weight_gap": 0.044700768422585815
+      },
+      "event_seconds": 9.818856099998811,
+      "event_matches_frozen": true,
+      "event_rejections": {
+        "INSUFFICIENT_CASH_WITH_FEES": 8
+      },
+      "event_planning": {
+        "UNITS": 1011,
+        "CASH_SHORTAGE": 41
+      }
+    }
+  },
+  "return_rank": {
+    "fast": [
+      "R30",
+      "V"
+    ],
+    "event": [
+      "R30",
+      "V"
+    ]
+  },
+  "elapsed_seconds": 54.40615290000278
+}
